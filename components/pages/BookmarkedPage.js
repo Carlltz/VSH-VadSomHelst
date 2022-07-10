@@ -2,14 +2,14 @@ import { StyleSheet, Text, View } from "react-native";
 import React from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
 
-const FavoritesPage = () => {
+const BookmarkedPage = () => {
   return (
     <View>
-      <Text>FavoritesPage</Text>
+      <Text>BookmarkedPage</Text>
     </View>
   );
 };
 
-export default FavoritesPage;
+export default BookmarkedPage;
 
 const styles = StyleSheet.create({});

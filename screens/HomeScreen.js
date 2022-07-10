@@ -9,8 +9,9 @@ import { FontAwesome } from "@expo/vector-icons";
 import ProfilePage from "../components/pages/ProfilePage";
 import LikedPage from "../components/pages/LikedPage";
 import SwipePage from "../components/pages/SwipePage";
-import FavoritesPage from "../components/pages/FavoritesPage";
+import BookmarkedPage from "../components/pages/BookmarkedPage";
 import SettingsPage from "../components/pages/SettingsPage";
+import SearchPage from "../components/pages/SearchPage";
 
 const HomeScreen = ({ navigation }) => {
   const [page, setPage] = useState("main");
@@ -24,10 +25,12 @@ const HomeScreen = ({ navigation }) => {
         return <ProfilePage />;
       case "liked":
         return <LikedPage />;
-      case "favorites":
-        return <FavoritesPage />;
+      case "bookmarked":
+        return <BookmarkedPage />;
       case "settings":
         return <SettingsPage />;
+      case "search":
+        return <SearchPage />;
       default:
         return <SettingsPage />;
     }
@@ -66,7 +69,7 @@ const HomeScreen = ({ navigation }) => {
 
       <View style={styles.topBar}>
         <Text style={{ fontSize: 28, fontWeight: "bold", color: navy }}>VadSomHelst</Text>
-        <TouchableOpacity style={styles.searchGlass} onPress={() => {}}>
+        <TouchableOpacity style={styles.searchGlass} onPress={() => setPage("search")}>
           <FontAwesome name="search" size={30} color={navy} />
         </TouchableOpacity>
       </View>
@@ -75,7 +78,7 @@ const HomeScreen = ({ navigation }) => {
         <RenderPage />
       </View>
 
-      <BotBar setParentPage={setPage} />
+      <BotBar setParentPage={setPage} currentParentPage={page} />
     </View>
   );
 };

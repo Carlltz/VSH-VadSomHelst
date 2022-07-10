@@ -1,9 +1,11 @@
 import { StyleSheet, FlatList, View, Text, Dimensions, Image, TouchableOpacity, Button } from "react-native";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import Swiper from "react-native-deck-swiper";
 import { MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
+import { db } from "../../firebase";
+import { collection, doc, getDoc, addDoc, getDocs } from "firebase/firestore";
 
 //https://github.com/alexbrillant/react-native-deck-swiper
 //https://www.npmjs.com/package/@ilterugur/react-native-deck-swiper-renewed
@@ -66,8 +68,79 @@ const DATA = [
   },
 ];
 
+const newDATA = [
+  {
+    name: "Pasta Puttanesca med purjolök och zucchini",
+    image:
+      "https://assets.icanet.se/e_sharpen:80,q_auto,dpr_1.25,w_718,h_718,c_lfill/imagevaultfiles/id_193835/cf_259/pasta_puttanesca_med_purjolok_och_zucchini.jpg",
+    time: "Under 45 min",
+    description:
+      "Pasta puttanesca är ursprungligen en riktig man-tager-vad-man-haver rätt där man kan blanda i lite allt möjligt som finns i grönsakslådan. Sedan får sardeller och kapris sätta den rätta knorren på pastasåsen och så i med en burk goda oliver. En spaghetti med mycket smak av Italien.",
+    ingredientAmount: 15,
+    stars: [1, 1, 1, 1, 0.5],
+    url: "https://www.ica.se/recept/pasta-puttanesca-med-purjolok-och-zucchini-724896/",
+  },
+  {
+    name: "Supersnabb pasta med bacon och majs",
+    image:
+      "https://assets.icanet.se/e_sharpen:80,q_auto,dpr_1.25,w_718,h_718,c_lfill/imagevaultfiles/id_237398/cf_259/supersnabb_pasta_med_bacon_och_majs.jpg",
+    time: "Under 30 min",
+    description:
+      "Hur trollar man fram en snabb lunch eller middag som alla älskar? Svaret är pasta med bacon. Nykokt tagliatelle med majs, bacon, grädde och lite chilisås är nog den enklaste pastarätt du kan göra, men också en av de godaste. Klart på en kvart!",
+    ingredientAmount: 11,
+    stars: [1, 1, 1, 1, 0],
+    url: "https://www.ica.se/recept/supersnabb-pasta-med-bacon-och-majs-723149/",
+  },
+  {
+    name: "Fläskytterfilé med gräddig sås och pasta",
+    image:
+      "https://assets.icanet.se/e_sharpen:80,q_auto,dpr_1.25,w_718,h_718,c_lfill/imagevaultfiles/id_240568/cf_259/flaskytterfilé_med_graddig_sas_och_pasta.jpg",
+    time: "Under 45 min",
+    description:
+      "Sa någon kött och sås? Här steks filéerna gyllenbruna i en varm panna som sedan får sällskap av mjölk, grädde, soja, buljongtärning och timjan. Resultatet blir en god och krämig gräddsås. Servera ihop med pasta och grönsaker. Går hem hos hela familjen!",
+    ingredientAmount: 13,
+    stars: [1, 1, 1, 1, 0.5],
+    url: "https://www.ica.se/recept/flaskytterfile-med-graddig-sas-och-pasta-724762/",
+  },
+  {
+    name: "Pasta Bolognese med tomatsallad",
+    image:
+      "https://assets.icanet.se/e_sharpen:80,q_auto,dpr_1.25,w_718,h_718,c_lfill/imagevaultfiles/id_71267/cf_259/pasta_bolognese_med_tomatsallad.jpg",
+    time: "Under 30 min",
+    description:
+      "En enkel men färgsprakande och supergod pasta bolognese sitter väl aldrig fel? Tillagningstiden är under 30 minuter och rätten kommer snabbt bli en vardagsfavorit för hela familjen! Servera bolognesen med nykokt pasta och fräsch tomatsallad.",
+    ingredientAmount: 17,
+    stars: [1, 1, 1, 1, 0],
+    url: "https://www.ica.se/recept/pasta-bolognese-med-tomatsallad-715955/",
+  },
+];
+
 const SwipePage = ({ setParentPage }) => {
   const [lastSwipe, setLastSwipe] = useState("");
+  const [recipesLoaded, setRecipesLoaded] = useState(false);
+  const [recipesSnaps, setRecipesSnaps] = useState(null);
+
+  // getting DATA
+
+  let recipes = [];
+
+  async function addRecipe(recipe) {
+    const toAdd = await addDoc(collection(db, "recipes"), recipe);
+    console.log("Added: " + toAdd.id);
+  }
+
+  async function getDATA() {
+    const recipesSnap = await getDocs(collection(db, "recipes"));
+    recipesSnap.forEach((doc) => {
+      recipes.push(doc.data());
+    });
+    setRecipesSnaps(recipes);
+    setRecipesLoaded(true);
+  }
+
+  if (!recipesLoaded) {
+    getDATA();
+  }
 
   const useSwiper = useRef(null).current;
 
@@ -111,37 +184,44 @@ const SwipePage = ({ setParentPage }) => {
         </View>
         <View style={{ alignItems: "center" }}>
           <MaterialCommunityIcons name="food-takeout-box-outline" size={26} color={navy} />
-          <Text style={{ fontSize: 20, fontWeight: "500" }}>{item.amount}</Text>
+          <Text style={{ fontSize: 20, fontWeight: "500" }}>
+            {item.ingredientAmount} {item.ingredientAmount == 1 ? "Ingrediens" : "Ingedienser"}
+          </Text>
         </View>
       </View>
       <Text style={{ fontSize: 16, fontWeight: "400", textAlign: "center" }}>{item.description}</Text>
     </View>
   );
-  return (
-    <View style={{ width: "100%", height: "100%" }}>
-      <Swiper
-        ref={useSwiper}
-        animateCardOpacity
-        cards={DATA}
-        renderCard={(card) => <Card item={card} />}
-        cardIndex={0}
-        backgroundColor={lime}
-        cardVerticalMargin={6}
-        cardHorizontalMargin={6}
-        stackSize={2}
-        infinite
-        animateOverlayLabelsOpacity
-        containerStyle={styles.mainScroll}
-        useViewOverflow={false}
-        disableTopSwipe={true}
-        disableBottomSwipe={true}
-        onSwipedRight={(index) => setLastSwipe("Right: " + DATA[index].name)}
-        onSwipedLeft={(index) => setLastSwipe("Left: " + DATA[index].name)}
-        verticalSwipe={false}
-        horizontalThreshold={40}
-        swipeAnimationDuration={200}></Swiper>
-    </View>
-  );
+
+  if (recipesLoaded) {
+    return (
+      <View style={{ width: "100%", height: "100%" }}>
+        <Swiper
+          ref={useSwiper}
+          animateCardOpacity
+          cards={recipesSnaps}
+          renderCard={(card) => <Card item={card} />}
+          cardIndex={0}
+          backgroundColor={lime}
+          cardVerticalMargin={6}
+          cardHorizontalMargin={6}
+          stackSize={2}
+          infinite
+          animateOverlayLabelsOpacity
+          containerStyle={styles.mainScroll}
+          useViewOverflow={false}
+          disableTopSwipe={true}
+          disableBottomSwipe={true}
+          onSwipedRight={(index) => setLastSwipe("Right: " + DATA[index].name)}
+          onSwipedLeft={(index) => setLastSwipe("Left: " + DATA[index].name)}
+          verticalSwipe={false}
+          horizontalThreshold={40}
+          swipeAnimationDuration={200}></Swiper>
+      </View>
+    );
+  } else {
+    return <View></View>;
+  }
 };
 
 export default SwipePage;

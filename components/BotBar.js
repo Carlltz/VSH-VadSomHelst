@@ -15,16 +15,17 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 
 import { MaterialIcons } from "@expo/vector-icons";
-import { Fontisto, Ionicons } from "@expo/vector-icons";
-import { FontAwesome5 } from "@expo/vector-icons";
+import { FontAwesome5, FontAwesome, Ionicons } from "@expo/vector-icons";
 
 AnimatedIcon = Animated.createAnimatedComponent(MaterialCommunityIcons);
 
-const HomeScreen = ({ setParentPage }) => {
+const HomeScreen = ({ setParentPage, currentParentPage }) => {
   const [page, setPage] = useState("main");
   const [apple, setApple] = useState("food-apple");
   const [likedIcon, setLikedIcon] = useState("favorite-outline");
   const [userIcon, setUserIcon] = useState("user");
+  const [bookmarkIcon, setBookmarkIcon] = useState("bookmark-o");
+  const [settingsIcon, setSettingsIcon] = useState("settings-outline");
 
   const hwAnim = useRef(new Animated.Value(45)).current;
   const leftAnim = useRef(new Animated.Value(-45 / 2)).current;
@@ -35,6 +36,8 @@ const HomeScreen = ({ setParentPage }) => {
     setApple("food-apple-outline");
     setLikedIcon("favorite-outline");
     setUserIcon("user");
+    setBookmarkIcon("bookmark-o");
+    setSettingsIcon("settings-outline");
 
     Animated.timing(hwAnim, {
       toValue: 45,
@@ -98,9 +101,21 @@ const HomeScreen = ({ setParentPage }) => {
       case "liked":
         setLikedIcon("favorite");
         break;
+      case "bookmarked":
+        setBookmarkIcon("bookmark");
+        break;
+      case "settings":
+        setSettingsIcon("settings-sharp");
+        break;
     }
     setParentPage(page);
   }, [page]);
+
+  useEffect(() => {
+    if (currentParentPage === "search") {
+      deSelectAll();
+    }
+  }, [currentParentPage]);
 
   const Blob = () => {
     return (
@@ -133,11 +148,11 @@ const HomeScreen = ({ setParentPage }) => {
           <MaterialIcons name={likedIcon} size={optionsSize + 4} color={navy} />
         </TouchableOpacity>
         <View style={styles.blobPlace} />
-        <TouchableOpacity style={styles.blobPlace} onPress={() => setPage("favorites")}>
-          <Fontisto name="favorite" size={optionsSize - 5} color={navy} />
+        <TouchableOpacity style={styles.blobPlace} onPress={() => setPage("bookmarked")}>
+          <FontAwesome name={bookmarkIcon} size={optionsSize} color="black" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.blobPlace} onPress={() => setPage("settings")}>
-          <MaterialIcons name="settings" size={optionsSize} color={navy} />
+          <Ionicons name={settingsIcon} size={optionsSize} color={navy} />
         </TouchableOpacity>
       </View>
       <Blob />

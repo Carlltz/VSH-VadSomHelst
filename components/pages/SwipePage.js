@@ -1,11 +1,11 @@
-import { StyleSheet, FlatList, View, Text, Dimensions, Image, TouchableOpacity, Button } from "react-native";
+import { StyleSheet, FlatList, View, Text, Dimensions, Image, TouchableOpacity, Button, AppState } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import Swiper from "react-native-deck-swiper";
 import { MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
-import { db } from "../../firebase";
-import { collection, doc, getDoc, addDoc, getDocs } from "firebase/firestore";
+import { auth, db } from "../../firebase";
+import { collection, doc, getDoc, addDoc, getDocs, setDoc } from "firebase/firestore";
 
 //https://github.com/alexbrillant/react-native-deck-swiper
 //https://www.npmjs.com/package/@ilterugur/react-native-deck-swiper-renewed
@@ -119,6 +119,44 @@ const SwipePage = ({ setParentPage }) => {
   const [lastSwipe, setLastSwipe] = useState("");
   const [recipesLoaded, setRecipesLoaded] = useState(false);
   const [recipesSnaps, setRecipesSnaps] = useState(null);
+  const [liked, setLiked] = useState([]);
+  const [disliked, setDisliked] = useState([]);
+
+  //test appState
+  const appState = useRef(AppState.currentState);
+  const [appStateVisible, setAppStateVisible] = useState(appState.current);
+
+  async function updateLiked(val) {
+    setLiked(val);
+    await setDoc(doc(db, "users", auth.currentUser.uid), { liked: val }, { merge: true });
+  }
+
+  async function updateDisliked(val) {
+    setDisliked(val);
+    await setDoc(doc(db, "users", auth.currentUser.uid), { disliked: val }, { merge: true });
+  }
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      console.log("clLiked: ", liked);
+      if (appState.current.match(/inactive|background/) && nextAppState === "active") {
+        console.log("App has come to the foreground!");
+      }
+
+      if (nextAppState === "background") {
+        console.log("Ja");
+        updateLiked();
+      }
+
+      appState.current = nextAppState;
+      setAppStateVisible(appState.current);
+      console.log("AppState", appState.current);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   // getting DATA
 
@@ -132,9 +170,19 @@ const SwipePage = ({ setParentPage }) => {
   async function getDATA() {
     const recipesSnap = await getDocs(collection(db, "recipes"));
     recipesSnap.forEach((doc) => {
-      recipes.push(doc.data());
+      //console.log(doc.id);
+      const data = doc.data();
+      data.id = doc.id;
+      recipes.push(data);
     });
     setRecipesSnaps(recipes);
+
+    const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+    const userData = userSnap.data();
+    setLiked(userData.liked);
+    setDisliked(userData.disliked);
+    //console.log(liked["liked"]);
+
     setRecipesLoaded(true);
   }
 
@@ -212,8 +260,8 @@ const SwipePage = ({ setParentPage }) => {
           useViewOverflow={false}
           disableTopSwipe={true}
           disableBottomSwipe={true}
-          onSwipedRight={(index) => setLastSwipe("Right: " + DATA[index].name)}
-          onSwipedLeft={(index) => setLastSwipe("Left: " + DATA[index].name)}
+          onSwipedRight={(index) => updateLiked([...liked, recipesSnaps[index].id])}
+          onSwipedLeft={(index) => updateDisliked([...disliked, recipesSnaps[index].id])}
           verticalSwipe={false}
           horizontalThreshold={40}
           swipeAnimationDuration={200}></Swiper>

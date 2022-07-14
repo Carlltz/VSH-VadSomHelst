@@ -9,7 +9,7 @@ const ProfilePage = () => {
       <View style={styles.profileView}>
         <Image style={styles.image} source={require("../../assets/profilePic.jpg")} />
         <Text style={{ fontWeight: "500", fontSize: 24 }}>{auth.currentUser.displayName}</Text>
-        <Text style={{ fontWeight: "400", fontSize: 16 }}>Swipes: 100</Text>
+        {/* <Text style={{ fontWeight: "400", fontSize: 16 }}>Swipes: 100</Text> */}
       </View>
     </View>
   );

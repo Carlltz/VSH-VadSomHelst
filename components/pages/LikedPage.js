@@ -1,8 +1,20 @@
-import { FlatList, StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, Linking } from "react-native";
-import React, { useState } from "react";
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  Dimensions,
+  TouchableOpacity,
+  Linking,
+  ActivityIndicator,
+} from "react-native";
+import React, { useState, useEffect } from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
 import { MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
+import { collection, doc, getDoc, addDoc, getDocs, setDoc } from "firebase/firestore";
+import { auth, db } from "../../firebase";
 
 const DATA = [
   {
@@ -92,6 +104,11 @@ const DATA = [
 ];
 
 const LikedPage = () => {
+  const [recipesLoaded, setRecipesLoaded] = useState(false);
+  //const [liked, setLiked] = useState([]);
+  //const [recipesSnaps, setRecipesSnaps] = useState(null);
+  const [likedData, setLikedData] = useState([]);
+
   function getStar(val) {
     switch (val) {
       case 0:
@@ -103,14 +120,54 @@ const LikedPage = () => {
     }
   }
 
+  let recipes = [];
+
+  useEffect(() => {
+    // 👇️ set isMounted to true
+    let isMounted = true;
+
+    async function getDATA() {
+      const recipesSnap = await getDocs(collection(db, "recipes"));
+      recipesSnap.forEach((doc) => {
+        const data = doc.data();
+        data.id = doc.id;
+        recipes.push(data);
+      });
+      //setRecipesSnaps(recipes);
+
+      const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+      const userData = userSnap.data();
+      //setLiked(userData.liked);
+
+      let like = [];
+      recipes.forEach((rec) => {
+        if (userData.liked.includes(rec.id)) {
+          like.push(rec);
+        }
+      });
+      setLikedData(like);
+
+      setRecipesLoaded(true);
+    }
+
+    if (!recipesLoaded) {
+      getDATA();
+    }
+
+    return () => {
+      // 👇️ when component unmounts, set isMounted to false
+      isMounted = false;
+    };
+  }, []);
+
   const renderCard = ({ item }) => {
-    let x = 0,
+    /*     let x = 0,
       y = 0,
       height = 90,
       width = 90;
     const onLayout = (event) => {
       ({ x, y, height, width } = event.nativeEvent.layout);
-    };
+    }; */
 
     return (
       <TouchableOpacity
@@ -118,7 +175,6 @@ const LikedPage = () => {
         style={[styles.card, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
         <Image style={[styles.cardImage]} source={{ uri: item.image }} />
         <View
-          onLayout={onLayout}
           style={{
             width: "100%",
             flex: 1,
@@ -147,7 +203,9 @@ const LikedPage = () => {
             </View>
             <View style={{ alignItems: "center" }}>
               <MaterialCommunityIcons name="food-takeout-box-outline" size={20} color={navy} />
-              <Text style={{ fontSize: 16, fontWeight: "500" }}>{item.amount}</Text>
+              <Text style={{ fontSize: 16, fontWeight: "500" }}>
+                {item.ingredientAmount} {item.ingredientAmount == 1 ? "Ingrediens" : "Ingredienser"}
+              </Text>
             </View>
           </View>
         </View>
@@ -155,17 +213,25 @@ const LikedPage = () => {
     );
   };
 
-  return (
-    <View style={styles.container}>
-      <FlatList
-        contentContainerStyle={{ paddingBottom: 8, paddingTop: 0 }}
-        style={styles.flatList}
-        data={DATA}
-        renderItem={renderCard}
-        keyExtractor={(item) => item.id}
-      />
-    </View>
-  );
+  if (recipesLoaded) {
+    return (
+      <View style={styles.container}>
+        <FlatList
+          contentContainerStyle={{ paddingBottom: 8, paddingTop: 0 }}
+          style={styles.flatList}
+          data={likedData}
+          renderItem={renderCard}
+          keyExtractor={(item) => item.id}
+        />
+      </View>
+    );
+  } else {
+    return (
+      <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 };
 
 export default LikedPage;

@@ -1,13 +1,42 @@
-import { StyleSheet, Text, TouchableOpacity, View, Dimensions, Modal, Button } from "react-native";
-import React, { useState } from "react";
-import { auth } from "../../firebase";
+import { StyleSheet, Text, TouchableOpacity, View, Dimensions, Modal, Button, Animated, Easing } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
 import { signOut } from "firebase/auth";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import { useNavigation } from "@react-navigation/native";
+import { auth, db } from "../../firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 const SettingsPage = () => {
   const [logOutPopup, setLogOutPopup] = useState(false);
+
+  const smallPop = useRef(new Animated.Value(0)).current;
+
+  const showPop = () => {
+    Animated.timing(smallPop, {
+      toValue: 0.9,
+      duration: 400,
+      useNativeDriver: false,
+    }).start(() => {
+      setTimeout(() => {
+        Animated.timing(smallPop, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: false,
+        }).start();
+      }, 800);
+    });
+  };
+
+  async function resetLiked() {
+    showPop();
+    await setDoc(doc(db, "users", auth.currentUser.uid), { liked: [] }, { merge: true });
+  }
+
+  async function resetDisliked() {
+    showPop();
+    await setDoc(doc(db, "users", auth.currentUser.uid), { disliked: [] }, { merge: true });
+  }
 
   const navigation = useNavigation();
 
@@ -21,9 +50,20 @@ const SettingsPage = () => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.reset} onPress={() => resetLiked()}>
+        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Reset liked</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.reset} onPress={() => resetDisliked()}>
+        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Reset disliked</Text>
+      </TouchableOpacity>
       <TouchableOpacity style={styles.loggaUt} onPress={() => setLogOutPopup(true)}>
         <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Logga ut</Text>
       </TouchableOpacity>
+
+      <Animated.View style={[styles.pop, { opacity: smallPop }]}>
+        <Text style={{ color: "white", fontSize: 17 }}>Reseting...</Text>
+      </Animated.View>
+
       <Modal
         animationType="fade"
         transparent={true}
@@ -83,5 +123,20 @@ const styles = StyleSheet.create({
     width: "50%",
     padding: 8,
     borderTopWidth: 1,
+  },
+  reset: {
+    width: Dimensions.get("window").width * 0.9,
+    backgroundColor: "#DB2432",
+    padding: 10,
+    marginTop: Dimensions.get("window").width * 0.05,
+    borderRadius: 10,
+  },
+  pop: {
+    position: "absolute",
+    bottom: Dimensions.get("window").height * 0.025,
+    backgroundColor: navy,
+    paddingHorizontal: 25,
+    paddingVertical: 10,
+    borderRadius: 100,
   },
 });

@@ -1,4 +1,15 @@
-import { StyleSheet, FlatList, View, Text, Dimensions, Image, TouchableOpacity, Button, AppState } from "react-native";
+import {
+  StyleSheet,
+  FlatList,
+  View,
+  Text,
+  Dimensions,
+  Image,
+  TouchableOpacity,
+  Button,
+  AppState,
+  ActivityIndicator,
+} from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
@@ -118,9 +129,10 @@ const newDATA = [
 const SwipePage = ({ setParentPage }) => {
   const [lastSwipe, setLastSwipe] = useState("");
   const [recipesLoaded, setRecipesLoaded] = useState(false);
-  const [recipesSnaps, setRecipesSnaps] = useState(null);
+  const [recipesSnaps, setRecipesSnaps] = useState([]);
   const [liked, setLiked] = useState([]);
   const [disliked, setDisliked] = useState([]);
+  const [swipedCards, setSwipedCards] = useState([]);
 
   //test appState
   const appState = useRef(AppState.currentState);
@@ -162,33 +174,45 @@ const SwipePage = ({ setParentPage }) => {
 
   let recipes = [];
 
-  async function addRecipe(recipe) {
-    const toAdd = await addDoc(collection(db, "recipes"), recipe);
-    console.log("Added: " + toAdd.id);
-  }
+  useEffect(() => {
+    // 👇️ set isMounted to true
+    let isMounted = true;
 
-  async function getDATA() {
-    const recipesSnap = await getDocs(collection(db, "recipes"));
-    recipesSnap.forEach((doc) => {
-      //console.log(doc.id);
-      const data = doc.data();
-      data.id = doc.id;
-      recipes.push(data);
-    });
-    setRecipesSnaps(recipes);
+    async function addRecipe(recipe) {
+      const toAdd = await addDoc(collection(db, "recipes"), recipe);
+      console.log("Added: " + toAdd.id);
+    }
 
-    const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
-    const userData = userSnap.data();
-    setLiked(userData.liked);
-    setDisliked(userData.disliked);
-    //console.log(liked["liked"]);
+    async function getDATA() {
+      const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+      const userData = userSnap.data();
+      setLiked(userData.liked);
+      setDisliked(userData.disliked);
+      const swiped = [...userData.liked, ...userData.disliked];
 
-    setRecipesLoaded(true);
-  }
+      const recipesSnap = await getDocs(collection(db, "recipes"));
+      recipesSnap.forEach((doc) => {
+        if (!swiped.includes(doc.id)) {
+          const data = doc.data();
+          data.id = doc.id;
+          recipes.push(data);
+        }
+      });
+      console.log(recipes);
+      setRecipesSnaps(recipes);
 
-  if (!recipesLoaded) {
-    getDATA();
-  }
+      setRecipesLoaded(true);
+    }
+
+    if (!recipesLoaded) {
+      getDATA();
+    }
+
+    return () => {
+      // 👇️ when component unmounts, set isMounted to false
+      isMounted = false;
+    };
+  }, []);
 
   const useSwiper = useRef(null).current;
 
@@ -233,7 +257,7 @@ const SwipePage = ({ setParentPage }) => {
         <View style={{ alignItems: "center" }}>
           <MaterialCommunityIcons name="food-takeout-box-outline" size={26} color={navy} />
           <Text style={{ fontSize: 20, fontWeight: "500" }}>
-            {item.ingredientAmount} {item.ingredientAmount == 1 ? "Ingrediens" : "Ingedienser"}
+            {item.ingredientAmount} {item.ingredientAmount == 1 ? "Ingrediens" : "Ingredienser"}
           </Text>
         </View>
       </View>
@@ -241,7 +265,7 @@ const SwipePage = ({ setParentPage }) => {
     </View>
   );
 
-  if (recipesLoaded) {
+  if (recipesLoaded && recipesSnaps.length > 0) {
     return (
       <View style={{ width: "100%", height: "100%" }}>
         <Swiper
@@ -254,7 +278,6 @@ const SwipePage = ({ setParentPage }) => {
           cardVerticalMargin={6}
           cardHorizontalMargin={6}
           stackSize={2}
-          infinite
           animateOverlayLabelsOpacity
           containerStyle={styles.mainScroll}
           useViewOverflow={false}
@@ -267,8 +290,18 @@ const SwipePage = ({ setParentPage }) => {
           swipeAnimationDuration={200}></Swiper>
       </View>
     );
+  } else if (recipesLoaded) {
+    return (
+      <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ fontSize: 20, fontWeight: "bold" }}>Slut på recept!</Text>
+      </View>
+    );
   } else {
-    return <View></View>;
+    return (
+      <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 };
 

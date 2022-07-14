@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View, Button, StatusBar, TouchableOpacity } from "react-native";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 import { lime, lemon, teal, mint, navy } from "../styles/colors";
 import BotBar from "../components/BotBar";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 
 import ProfilePage from "../components/pages/ProfilePage";
 import LikedPage from "../components/pages/LikedPage";
@@ -12,6 +12,8 @@ import SwipePage from "../components/pages/SwipePage";
 import BookmarkedPage from "../components/pages/BookmarkedPage";
 import SettingsPage from "../components/pages/SettingsPage";
 import SearchPage from "../components/pages/SearchPage";
+import DislikedPage from "../components/pages/DislikedPage";
+import TopBar from "../components/TopBar";
 
 const HomeScreen = ({ navigation }) => {
   const [page, setPage] = useState("main");
@@ -27,10 +29,10 @@ const HomeScreen = ({ navigation }) => {
         return <LikedPage />;
       case "bookmarked":
         return <BookmarkedPage />;
-      case "settings":
-        return <SettingsPage />;
       case "search":
         return <SearchPage />;
+      case "disliked":
+        return <DislikedPage />;
       default:
         return <SettingsPage />;
     }
@@ -67,12 +69,7 @@ const HomeScreen = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle={"light-content"} />
 
-      <View style={styles.topBar}>
-        <Text style={{ fontSize: 28, fontWeight: "bold", color: navy }}>VadSomHelst</Text>
-        <TouchableOpacity style={styles.searchGlass} onPress={() => setPage("search")}>
-          <FontAwesome name="search" size={30} color={navy} />
-        </TouchableOpacity>
-      </View>
+      <TopBar setParentPage={setPage} currentParentPage={page} />
 
       <View style={styles.mainView}>
         <RenderPage />
@@ -94,14 +91,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: teal,
   },
-  topBar: {
-    height: 40,
-    width: "100%",
-    backgroundColor: mint,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-  },
+
   botBar: {
     height: 45,
     width: "100%",
@@ -117,9 +107,5 @@ const styles = StyleSheet.create({
   logOut: {
     position: "absolute",
     left: 25,
-  },
-  searchGlass: {
-    position: "absolute",
-    right: 15,
   },
 });

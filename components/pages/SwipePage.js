@@ -9,6 +9,7 @@ import {
   Button,
   AppState,
   ActivityIndicator,
+  ImageBackground,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
@@ -16,68 +17,22 @@ import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import Swiper from "react-native-deck-swiper";
 import { MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
 import { auth, db } from "../../firebase";
-import { collection, doc, getDoc, addDoc, getDocs, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  addDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  where,
+  query,
+} from "firebase/firestore";
 
 //https://github.com/alexbrillant/react-native-deck-swiper
 //https://www.npmjs.com/package/@ilterugur/react-native-deck-swiper-renewed
-
-const DATA = [
-  {
-    name: "Kyckling med purjolökssås",
-    id: 0,
-    image:
-      "https://assets.icanet.se/e_sharpen:80,q_auto,dpr_1.25,w_718,h_718,c_lfill/imagevaultfiles/id_239046/cf_259/kyckling_med_purjolokssas.jpg",
-    time: "Under 30 min",
-    description:
-      "Den här lättlagade pastarätten med kyckling, purjolök och sockerärter kan säkert bli en ny favorit där hemma i stugorna. Med lite vitlök och basilika sprids smarriga dofter i köket. Lika god är den att äta!",
-    amount: "11 Ingredienser",
-    stars: [1, 1, 1, 1, 0],
-  },
-  {
-    name: "Pasta Puttanesca med purjolök och zucchini",
-    id: 1,
-    image:
-      "https://assets.icanet.se/e_sharpen:80,q_auto,dpr_1.25,w_718,h_718,c_lfill/imagevaultfiles/id_193835/cf_259/pasta_puttanesca_med_purjolok_och_zucchini.jpg",
-    time: "Under 45 min",
-    description:
-      "Pasta puttanesca är ursprungligen en riktig man-tager-vad-man-haver rätt där man kan blanda i lite allt möjligt som finns i grönsakslådan. Sedan får sardeller och kapris sätta den rätta knorren på pastasåsen och så i med en burk goda oliver. En spaghetti med mycket smak av Italien.",
-    amount: "15 Ingredienser",
-    stars: [1, 1, 1, 1, 0.5],
-  },
-  {
-    name: "Supersnabb pasta med bacon och majs",
-    id: 2,
-    image:
-      "https://assets.icanet.se/e_sharpen:80,q_auto,dpr_1.25,w_718,h_718,c_lfill/imagevaultfiles/id_237398/cf_259/supersnabb_pasta_med_bacon_och_majs.jpg",
-    time: "Under 30 min",
-    description:
-      "Hur trollar man fram en snabb lunch eller middag som alla älskar? Svaret är pasta med bacon. Nykokt tagliatelle med majs, bacon, grädde och lite chilisås är nog den enklaste pastarätt du kan göra, men också en av de godaste. Klart på en kvart!",
-    amount: "11 Ingredienser",
-    stars: [1, 1, 1, 1, 0],
-  },
-  {
-    name: "Fläskytterfilé med gräddig sås och pasta",
-    id: 3,
-    image:
-      "https://assets.icanet.se/e_sharpen:80,q_auto,dpr_1.25,w_718,h_718,c_lfill/imagevaultfiles/id_240568/cf_259/flaskytterfilé_med_graddig_sas_och_pasta.jpg",
-    time: "Under 45 min",
-    description:
-      "Sa någon kött och sås? Här steks filéerna gyllenbruna i en varm panna som sedan får sällskap av mjölk, grädde, soja, buljongtärning och timjan. Resultatet blir en god och krämig gräddsås. Servera ihop med pasta och grönsaker. Går hem hos hela familjen!",
-    amount: "13 Ingredienser",
-    stars: [1, 1, 1, 1, 0.5],
-  },
-  {
-    name: "Pasta Bolognese med tomatsallad",
-    id: 4,
-    image:
-      "https://assets.icanet.se/e_sharpen:80,q_auto,dpr_1.25,w_718,h_718,c_lfill/imagevaultfiles/id_71267/cf_259/pasta_bolognese_med_tomatsallad.jpg",
-    time: "Under 30 min",
-    description:
-      "En enkel men färgsprakande och supergod pasta bolognese sitter väl aldrig fel? Tillagningstiden är under 30 minuter och rätten kommer snabbt bli en vardagsfavorit för hela familjen! Servera bolognesen med nykokt pasta och fräsch tomatsallad.",
-    amount: "17 Ingredienser",
-    stars: [1, 1, 1, 1, 0],
-  },
-];
 
 const newDATA = [
   {
@@ -127,12 +82,17 @@ const newDATA = [
 ];
 
 const SwipePage = ({ setParentPage }) => {
+  const [currentSaved, setCurrentSaved] = useState(false);
+
   const [lastSwipe, setLastSwipe] = useState("");
   const [recipesLoaded, setRecipesLoaded] = useState(false);
   const [recipesSnaps, setRecipesSnaps] = useState([]);
   const [liked, setLiked] = useState([]);
   const [disliked, setDisliked] = useState([]);
   const [swipedCards, setSwipedCards] = useState([]);
+  const [bookmarkIcon, setBookmarkIcon] = useState("bookmark-o");
+  const [lastCardIndex, setLastCardIndex] = useState(-1);
+  const [reloadCards, setReloadCards] = useState(0);
 
   //test appState
   const appState = useRef(AppState.currentState);
@@ -148,15 +108,43 @@ const SwipePage = ({ setParentPage }) => {
     await setDoc(doc(db, "users", auth.currentUser.uid), { disliked: val }, { merge: true });
   }
 
+  async function updateSaved() {
+    const curSaved = await getDoc(doc(db, "users", auth.currentUser.uid));
+    const curSavedData = curSaved.data();
+    if (curSavedData.saved.includes(recipesSnaps[lastCardIndex + 1].id)) {
+      setBookmarkIcon("bookmark-o");
+      await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        saved: arrayRemove(recipesSnaps[lastCardIndex + 1].id),
+      });
+    } else {
+      setBookmarkIcon("bookmark");
+      await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        saved: arrayUnion(recipesSnaps[lastCardIndex + 1].id),
+      });
+    }
+
+    /* if (currentSaved) {
+      console.log("Removing");
+      await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        saved: arrayRemove(recipesSnaps[lastCardIndex + 1].id),
+      });
+    } else {
+      console.log("Adding");
+      await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        saved: arrayUnion(recipesSnaps[lastCardIndex + 1].id),
+      });
+    }
+    setCurrentSaved((val) => !val); */
+  }
+
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
-      console.log("clLiked: ", liked);
+      //console.log("clLiked: ", liked);
       if (appState.current.match(/inactive|background/) && nextAppState === "active") {
         console.log("App has come to the foreground!");
       }
 
       if (nextAppState === "background") {
-        console.log("Ja");
         updateLiked();
       }
 
@@ -180,7 +168,6 @@ const SwipePage = ({ setParentPage }) => {
 
     async function addRecipe(recipe) {
       const toAdd = await addDoc(collection(db, "recipes"), recipe);
-      console.log("Added: " + toAdd.id);
     }
 
     async function getDATA() {
@@ -198,7 +185,6 @@ const SwipePage = ({ setParentPage }) => {
           recipes.push(data);
         }
       });
-      console.log(recipes);
       setRecipesSnaps(recipes);
 
       setRecipesLoaded(true);
@@ -227,13 +213,24 @@ const SwipePage = ({ setParentPage }) => {
     }
   }
 
+  /* useEffect(() => {
+    console.log("Yupp");
+    setReloadCards(1);
+  }, [currentSaved]); */
+
   /* const handleOnSwipedLeft = () => useSwiper.swipeLeft();
   const handleOnSwipedTop = () => useSwiper.swipeTop();
   const handleOnSwipedRight = () => useSwiper.swipeRight(); */
   const Card = ({ item }) => (
     //
     <View style={[styles.card, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
-      <Image style={[styles.cardImage]} source={{ uri: item.image }} />
+      <ImageBackground style={[styles.cardImage]} imageStyle={{ borderRadius: 15 }} source={{ uri: item.image }}>
+        <TouchableOpacity onPress={() => updateSaved()}>
+          <View style={[styles.favoriteBtn]}>
+            <FontAwesome name={bookmarkIcon} size={34} color="black" />
+          </View>
+        </TouchableOpacity>
+      </ImageBackground>
       <Text style={{ fontSize: 28, textAlign: "center" }}>{item.name}</Text>
       <View style={{ flexDirection: "row", marginBottom: 2 }}>
         <FontAwesome name={getStar(item.stars[0])} size={24} color="black" />
@@ -273,11 +270,12 @@ const SwipePage = ({ setParentPage }) => {
           animateCardOpacity
           cards={recipesSnaps}
           renderCard={(card) => <Card item={card} />}
-          cardIndex={0}
+          cardIndex={reloadCards}
           backgroundColor={lime}
           cardVerticalMargin={6}
           cardHorizontalMargin={6}
           stackSize={2}
+          infinite
           animateOverlayLabelsOpacity
           containerStyle={styles.mainScroll}
           useViewOverflow={false}
@@ -285,6 +283,10 @@ const SwipePage = ({ setParentPage }) => {
           disableBottomSwipe={true}
           onSwipedRight={(index) => updateLiked([...liked, recipesSnaps[index].id])}
           onSwipedLeft={(index) => updateDisliked([...disliked, recipesSnaps[index].id])}
+          onSwiped={(index) => {
+            setLastCardIndex(index);
+            setCurrentSaved(false);
+          }}
           verticalSwipe={false}
           horizontalThreshold={40}
           swipeAnimationDuration={200}></Swiper>
@@ -326,6 +328,14 @@ const styles = StyleSheet.create({
   cardImage: {
     width: "100%",
     flex: 1,
+    alignItems: "flex-end",
+    justifyContent: "flex-end",
+  },
+  favoriteBtn: {
+    backgroundColor: "rgba(117, 201, 183, 0.8)",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 15,
+    margin: 10,
   },
 });

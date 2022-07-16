@@ -9,6 +9,7 @@ import HomeScreen from "./screens/HomeScreen";
 import { LogBox } from "react-native";
 
 LogBox.ignoreLogs(["EventEmitter.removeListener"]);
+LogBox.ignoreLogs(["AsyncStorage has been"]);
 
 const Stack = createNativeStackNavigator();
 

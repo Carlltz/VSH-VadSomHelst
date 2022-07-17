@@ -99,13 +99,13 @@ const SwipePage = ({ setParentPage }) => {
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
 
   async function updateLiked(val) {
-    setLiked(val);
-    await setDoc(doc(db, "users", auth.currentUser.uid), { liked: val }, { merge: true });
+    setLiked((prev) => [...prev, val]);
+    await updateDoc(doc(db, "users", auth.currentUser.uid), { liked: arrayUnion(val) });
   }
 
   async function updateDisliked(val) {
-    setDisliked(val);
-    await setDoc(doc(db, "users", auth.currentUser.uid), { disliked: val }, { merge: true });
+    setDisliked((prev) => [...prev, val]);
+    await updateDoc(doc(db, "users", auth.currentUser.uid), { disliked: arrayUnion(val) });
   }
 
   async function updateSaved() {
@@ -123,7 +123,7 @@ const SwipePage = ({ setParentPage }) => {
       });
     }
 
-    /* if (currentSaved) {
+    if (currentSaved) {
       console.log("Removing");
       await updateDoc(doc(db, "users", auth.currentUser.uid), {
         saved: arrayRemove(recipesSnaps[lastCardIndex + 1].id),
@@ -134,7 +134,7 @@ const SwipePage = ({ setParentPage }) => {
         saved: arrayUnion(recipesSnaps[lastCardIndex + 1].id),
       });
     }
-    setCurrentSaved((val) => !val); */
+    setCurrentSaved((val) => !val);
   }
 
   useEffect(() => {
@@ -278,10 +278,10 @@ const SwipePage = ({ setParentPage }) => {
           animateOverlayLabelsOpacity
           containerStyle={styles.mainScroll}
           useViewOverflow={false}
-          disableTopSwipe
-          disableBottomSwipe
-          onSwipedRight={(index) => updateLiked([...liked, recipesSnaps[index].id])}
-          onSwipedLeft={(index) => updateDisliked([...disliked, recipesSnaps[index].id])}
+          disableTopSwipe={true}
+          disableBottomSwipe={true}
+          onSwipedRight={(index) => updateLiked(recipesSnaps[index].id)}
+          onSwipedLeft={(index) => updateDisliked(recipesSnaps[index].id)}
           onSwiped={(index) => {
             setLastCardIndex(index);
             setCurrentSaved(false);

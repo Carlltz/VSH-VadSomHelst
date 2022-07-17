@@ -222,7 +222,6 @@ const SwipePage = ({ setParentPage }) => {
   const handleOnSwipedTop = () => useSwiper.swipeTop();
   const handleOnSwipedRight = () => useSwiper.swipeRight(); */
   const Card = ({ item }) => (
-    //
     <View style={[styles.card, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
       <ImageBackground style={[styles.cardImage]} imageStyle={{ borderRadius: 15 }} source={{ uri: item.image }}>
         <TouchableOpacity onPress={() => updateSaved()}>
@@ -279,8 +278,8 @@ const SwipePage = ({ setParentPage }) => {
           animateOverlayLabelsOpacity
           containerStyle={styles.mainScroll}
           useViewOverflow={false}
-          disableTopSwipe={true}
-          disableBottomSwipe={true}
+          disableTopSwipe
+          disableBottomSwipe
           onSwipedRight={(index) => updateLiked([...liked, recipesSnaps[index].id])}
           onSwipedLeft={(index) => updateDisliked([...disliked, recipesSnaps[index].id])}
           onSwiped={(index) => {

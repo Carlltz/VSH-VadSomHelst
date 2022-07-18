@@ -10,12 +10,14 @@ import {
   AppState,
   ActivityIndicator,
   ImageBackground,
+  Animated,
+  Linking,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import Swiper from "react-native-deck-swiper";
-import { MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
+import { MaterialCommunityIcons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { auth, db } from "../../firebase";
 import {
   collection,
@@ -82,29 +84,46 @@ const newDATA = [
 ];
 
 const SwipePage = ({ setParentPage }) => {
-  const [currentSaved, setCurrentSaved] = useState(false);
-
-  const [lastSwipe, setLastSwipe] = useState("");
   const [recipesLoaded, setRecipesLoaded] = useState(false);
   const [recipesSnaps, setRecipesSnaps] = useState([]);
-  const [liked, setLiked] = useState([]);
-  const [disliked, setDisliked] = useState([]);
-  const [swipedCards, setSwipedCards] = useState([]);
   const [bookmarkIcon, setBookmarkIcon] = useState("bookmark-o");
   const [lastCardIndex, setLastCardIndex] = useState(-1);
-  const [reloadCards, setReloadCards] = useState(0);
+  const [reachedEnd, setReachedEnd] = useState(false);
 
-  //test appState
-  const appState = useRef(AppState.currentState);
-  const [appStateVisible, setAppStateVisible] = useState(appState.current);
+  //Saved Text popup
+  const [savedText, setSavedText] = useState(null);
+  const smallPop = useRef(new Animated.Value(0)).current;
+  const popIsMounted = useRef(false);
+
+  const showPop = () => {
+    Animated.timing(smallPop, {
+      toValue: 0.9,
+      duration: 300,
+      useNativeDriver: false,
+    }).start(() => {
+      setTimeout(() => {
+        Animated.timing(smallPop, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: false,
+        }).start();
+      }, 1200);
+    });
+  };
+
+  useEffect(() => {
+    if (popIsMounted.current) {
+      showPop();
+    } else {
+      popIsMounted.current = true;
+    }
+  }, [savedText]);
 
   async function updateLiked(val) {
-    setLiked((prev) => [...prev, val]);
     await updateDoc(doc(db, "users", auth.currentUser.uid), { liked: arrayUnion(val) });
   }
 
   async function updateDisliked(val) {
-    setDisliked((prev) => [...prev, val]);
     await updateDoc(doc(db, "users", auth.currentUser.uid), { disliked: arrayUnion(val) });
   }
 
@@ -112,34 +131,24 @@ const SwipePage = ({ setParentPage }) => {
     const curSaved = await getDoc(doc(db, "users", auth.currentUser.uid));
     const curSavedData = curSaved.data();
     if (curSavedData.saved.includes(recipesSnaps[lastCardIndex + 1].id)) {
-      setBookmarkIcon("bookmark-o");
+      setSavedText("Removed!");
       await updateDoc(doc(db, "users", auth.currentUser.uid), {
         saved: arrayRemove(recipesSnaps[lastCardIndex + 1].id),
       });
     } else {
-      setBookmarkIcon("bookmark");
+      setSavedText("Saved!");
       await updateDoc(doc(db, "users", auth.currentUser.uid), {
         saved: arrayUnion(recipesSnaps[lastCardIndex + 1].id),
       });
     }
-
-    if (currentSaved) {
-      console.log("Removing");
-      await updateDoc(doc(db, "users", auth.currentUser.uid), {
-        saved: arrayRemove(recipesSnaps[lastCardIndex + 1].id),
-      });
-    } else {
-      console.log("Adding");
-      await updateDoc(doc(db, "users", auth.currentUser.uid), {
-        saved: arrayUnion(recipesSnaps[lastCardIndex + 1].id),
-      });
-    }
-    setCurrentSaved((val) => !val);
   }
+
+  //test appState
+  const appState = useRef(AppState.currentState);
+  const [appStateVisible, setAppStateVisible] = useState(appState.current);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
-      //console.log("clLiked: ", liked);
       if (appState.current.match(/inactive|background/) && nextAppState === "active") {
         console.log("App has come to the foreground!");
       }
@@ -159,7 +168,6 @@ const SwipePage = ({ setParentPage }) => {
   }, []);
 
   // getting DATA
-
   let recipes = [];
 
   useEffect(() => {
@@ -173,9 +181,12 @@ const SwipePage = ({ setParentPage }) => {
     async function getDATA() {
       const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
       const userData = userSnap.data();
-      setLiked(userData.liked);
-      setDisliked(userData.disliked);
-      const swiped = [...userData.liked, ...userData.disliked];
+      let swiped = [];
+      if (userData) {
+        const dataLiked = "liked" in userData ? userData.liked : [];
+        userData.disliked;
+        swiped = [...userData.liked, ...userData.disliked];
+      }
 
       const recipesSnap = await getDocs(collection(db, "recipes"));
       recipesSnap.forEach((doc) => {
@@ -185,6 +196,7 @@ const SwipePage = ({ setParentPage }) => {
           recipes.push(data);
         }
       });
+      if (recipes.length == 0) setReachedEnd(true);
       setRecipesSnaps(recipes);
 
       setRecipesLoaded(true);
@@ -212,11 +224,6 @@ const SwipePage = ({ setParentPage }) => {
         return "star-half-empty";
     }
   }
-
-  /* useEffect(() => {
-    console.log("Yupp");
-    setReloadCards(1);
-  }, [currentSaved]); */
 
   /* const handleOnSwipedLeft = () => useSwiper.swipeLeft();
   const handleOnSwipedTop = () => useSwiper.swipeTop();
@@ -261,7 +268,7 @@ const SwipePage = ({ setParentPage }) => {
     </View>
   );
 
-  if (recipesLoaded && recipesSnaps.length > 0) {
+  if (recipesLoaded && !reachedEnd) {
     return (
       <View style={{ width: "100%", height: "100%" }}>
         <Swiper
@@ -269,12 +276,11 @@ const SwipePage = ({ setParentPage }) => {
           animateCardOpacity
           cards={recipesSnaps}
           renderCard={(card) => <Card item={card} />}
-          cardIndex={reloadCards}
+          cardIndex={0}
           backgroundColor={lime}
           cardVerticalMargin={6}
           cardHorizontalMargin={6}
           stackSize={2}
-          infinite
           animateOverlayLabelsOpacity
           containerStyle={styles.mainScroll}
           useViewOverflow={false}
@@ -284,14 +290,19 @@ const SwipePage = ({ setParentPage }) => {
           onSwipedLeft={(index) => updateDisliked(recipesSnaps[index].id)}
           onSwiped={(index) => {
             setLastCardIndex(index);
-            setCurrentSaved(false);
           }}
           verticalSwipe={false}
           horizontalThreshold={40}
-          swipeAnimationDuration={200}></Swiper>
+          swipeAnimationDuration={200}
+          onSwipedAll={() => setReachedEnd(true)}
+          onTapCard={(index) => Linking.openURL(recipesSnaps[index].url)}
+        />
+        <Animated.View pointerEvents="none" style={[styles.pop, { opacity: smallPop }]}>
+          <Text style={{ color: "white", fontSize: 17 }}>{savedText}</Text>
+        </Animated.View>
       </View>
     );
-  } else if (recipesLoaded) {
+  } else if (reachedEnd) {
     return (
       <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
         <Text style={{ fontSize: 20, fontWeight: "bold" }}>Slut på recept!</Text>
@@ -336,5 +347,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 15,
     margin: 10,
+  },
+  pop: {
+    position: "absolute",
+    bottom: Dimensions.get("window").height * 0.025,
+    backgroundColor: navy,
+    paddingHorizontal: 25,
+    paddingVertical: 10,
+    borderRadius: 100,
+    alignSelf: "center",
   },
 });

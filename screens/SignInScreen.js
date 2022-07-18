@@ -1,16 +1,16 @@
-import { StyleSheet, Text, View, Button, TextInput, TouchableOpacity } from "react-native";
-import React from "react";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
 import { lime, lemon, teal, mint, navy } from "../styles/colors";
-import { useState, useEffect } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   onAuthStateChanged,
   updateProfile,
 } from "firebase/auth";
+import { getDocs, setDoc, collection, query, where, doc, updateDoc, arrayUnion } from "firebase/firestore";
 
 const SignInScreen = ({ navigation }) => {
   const [dispName, setdispName] = useState("");
@@ -22,10 +22,12 @@ const SignInScreen = ({ navigation }) => {
   useEffect(() => {
     const userChanged = onAuthStateChanged(auth, (user) => {
       if (user) {
-        navigation.navigate("HomeScreen");
+        if (user.displayName) {
+          console.log("HomeScreen: " + user.displayName);
+          navigation.navigate("HomeScreen");
+        }
       }
     });
-
     return userChanged;
   }, []);
 
@@ -35,27 +37,58 @@ const SignInScreen = ({ navigation }) => {
       .catch((error) => alert(error.message));
   };
 
-  const updateUser = () => {
+  const updateUser = async () => {
+    console.log("username: " + dispName);
+    await updateDoc(doc(db, "usernamesTaken", "taken"), {
+      usernamesTaken: arrayUnion(dispName),
+    });
+    await setDoc(doc(db, "usernames", auth.currentUser.uid), {
+      usrname: dispName,
+    });
+    await setDoc(doc(db, "users", auth.currentUser.uid), {
+      liked: [],
+      disliked: [],
+      saved: [],
+      friends: [],
+    });
     updateProfile(auth.currentUser, {
       displayName: dispName,
     })
-      .then(() => {
-        console.log("Success!!");
-      })
+      .then(() => {})
       .catch((error) => {
         alert(error.message);
       });
   };
 
-  const singUp = () => {
+  const singUp = async () => {
     if (password == repPassword) {
-      createUserWithEmailAndPassword(auth, email, password)
-        .then((userCredetials) => {
-          updateUser();
-        })
-        .catch((error) => alert(error.message));
+      let taken = false;
+      const q = query(collection(db, "usernamesTaken"), where("usernamesTaken", "array-contains-any", [dispName]));
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        if (doc.id == "taken") {
+          taken = true;
+        }
+      });
+      if (!taken) {
+        createUserWithEmailAndPassword(auth, email, password)
+          .then((userCredetials) => {
+            updateUser().then(() => navigation.navigate("HomeScreen"));
+          })
+          .catch((error) => {
+            if (error.code == "auth/email-already-in-use") {
+              alert("This email is already in use, try logging in instead.");
+            } else if (error.code == "auth/weak-password") {
+              alert("Please choose a longer password, at least 6 characters.");
+            } else {
+              alert(error.code);
+            }
+          });
+      } else {
+        alert("Username is already taken, please choose a different one.");
+      }
     } else {
-      alert("Passwords do not match");
+      alert("Passwords do not match.");
     }
   };
 

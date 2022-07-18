@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import React, { useState, useEffect } from "react";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { lime, lemon, teal, mint, navy } from "../styles/colors";
+import { generateBoxShadowStyle } from "../styles/generateShadow";
 
 const TopBar = ({ setParentPage, currentParentPage }) => {
   const [page, setPage] = useState("main");
@@ -25,7 +26,7 @@ const TopBar = ({ setParentPage, currentParentPage }) => {
   }, [currentParentPage]);
 
   return (
-    <View style={styles.topBar}>
+    <View style={[styles.topBar, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
       <Text style={{ fontSize: 28, fontWeight: "bold", color: navy }}>VadSomHelst</Text>
       <TouchableOpacity style={styles.searchGlass} onPress={() => setPage("search")}>
         <FontAwesome name="search" size={30} color={navy} />

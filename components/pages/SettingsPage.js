@@ -50,19 +50,19 @@ const SettingsPage = () => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={[styles.reset, {backgroundColor: lime}]} onPress={() => resetDisliked()}>
-        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Disliked recipes</Text>
+      <TouchableOpacity style={[styles.reset, { backgroundColor: teal }]} onPress={() => {}}>
+        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Ogillade recept</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={[styles.reset, {marginTop: "auto"}]} onPress={() => resetDisliked()}>
-        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Reset disliked</Text>
+      <TouchableOpacity style={[styles.reset, { marginTop: "auto" }]} onPress={() => resetDisliked()}>
+        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Återställ ogillade</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.reset} onPress={() => resetLiked()}>
-        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Reset liked</Text>
+        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Återställ gillade</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.loggaUt} onPress={() => setLogOutPopup(true)}>
         <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Logga ut</Text>
       </TouchableOpacity>
-      <Animated.View style={[styles.pop, { opacity: smallPop }]}>
+      <Animated.View pointerEvents="none" style={[styles.pop, { opacity: smallPop }]}>
         <Text style={{ color: "white", fontSize: 17 }}>Reseting...</Text>
       </Animated.View>
 
@@ -106,6 +106,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: Dimensions.get("window").width * 0.05,
     borderRadius: 10,
+    marginTop: Dimensions.get("window").width * 0.05,
   },
   modalPopup: {
     width: "80%",

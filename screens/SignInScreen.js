@@ -23,7 +23,6 @@ const SignInScreen = ({ navigation }) => {
     const userChanged = onAuthStateChanged(auth, (user) => {
       if (user) {
         if (user.displayName) {
-          console.log("HomeScreen: " + user.displayName);
           navigation.navigate("HomeScreen");
         }
       }
@@ -50,6 +49,7 @@ const SignInScreen = ({ navigation }) => {
       disliked: [],
       saved: [],
       friends: [],
+      groups: ["Privat"],
     });
     updateProfile(auth.currentUser, {
       displayName: dispName,

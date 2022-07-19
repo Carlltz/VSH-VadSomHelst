@@ -5,6 +5,7 @@ import { signOut } from "firebase/auth";
 import { lime, lemon, teal, mint, navy } from "../styles/colors";
 import BotBar from "../components/BotBar";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
 
 import ProfilePage from "../components/pages/ProfilePage";
 import LikedPage from "../components/pages/LikedPage";
@@ -67,8 +68,6 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={"light-content"} />
-
       <TopBar setParentPage={setPage} currentParentPage={page} />
 
       <View style={styles.mainView}>
@@ -86,10 +85,11 @@ export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: {
-    width: "100%",
-    height: "100%",
     alignItems: "center",
-    backgroundColor: teal,
+    alignSelf: "stretch",
+    flex: 1,
+    paddingTop: Constants.statusBarHeight,
+    backgroundColor: mint,
   },
 
   botBar: {

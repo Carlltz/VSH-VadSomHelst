@@ -50,7 +50,11 @@ const SettingsPage = () => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={[styles.reset, { backgroundColor: teal }]} onPress={() => {}}>
+      <TouchableOpacity
+        style={[styles.reset, { backgroundColor: teal }]}
+        onPress={() => {
+          navigation.push("Disliked");
+        }}>
         <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Ogillade recept</Text>
       </TouchableOpacity>
       <TouchableOpacity style={[styles.reset, { marginTop: "auto" }]} onPress={() => resetDisliked()}>
@@ -66,10 +70,7 @@ const SettingsPage = () => {
         <Text style={{ color: "white", fontSize: 17 }}>Reseting...</Text>
       </Animated.View>
 
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={logOutPopup}>
+      <Modal animationType="fade" transparent={true} visible={logOutPopup}>
         <View style={[styles.modalPopup, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
           <Text style={{ textAlign: "center", fontSize: 20, fontWeight: "600", marginVertical: 15, color: navy }}>
             Logga ut?

@@ -7,9 +7,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import SignInScreen from "./screens/SignInScreen";
 import HomeScreen from "./screens/HomeScreen";
 import { LogBox } from "react-native";
-
-LogBox.ignoreLogs(["EventEmitter.removeListener"]);
-LogBox.ignoreLogs(["AsyncStorage has been"]);
+import DislikedPage from "./components/pages/DislikedPage";
+import { lime, lemon, teal, mint, navy } from "./styles/colors";
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +20,17 @@ export default function App() {
         <Stack.Navigator>
           <Stack.Screen name="SignInScreen" component={SignInScreen} options={{ headerShown: false }} />
           <Stack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="Disliked"
+            component={DislikedPage}
+            /* Could set a custom header in options to specify the height if wanted */
+            options={{
+              title: "Ogillade",
+              headerStyle: {
+                backgroundColor: mint,
+              },
+            }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </View>

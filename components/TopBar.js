@@ -6,14 +6,9 @@ import { generateBoxShadowStyle } from "../styles/generateShadow";
 
 const TopBar = ({ setParentPage, currentParentPage }) => {
   const [page, setPage] = useState("main");
-  const [settingsIcon, setSettingsIcon] = useState("settings-outline");
 
   useEffect(() => {
-    setSettingsIcon("settings-outline");
     switch (page) {
-      case "settings":
-        setSettingsIcon("settings-sharp");
-        break;
       case "search":
         break;
     }
@@ -30,9 +25,6 @@ const TopBar = ({ setParentPage, currentParentPage }) => {
       <Text style={{ fontSize: 28, fontWeight: "bold", color: navy }}>VadSomHelst</Text>
       <TouchableOpacity style={styles.searchGlass} onPress={() => setPage("search")}>
         <FontAwesome name="search" size={30} color={navy} />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.settings} onPress={() => setPage("settings")}>
-        <Ionicons name={settingsIcon} size={30} color={navy} />
       </TouchableOpacity>
     </View>
   );

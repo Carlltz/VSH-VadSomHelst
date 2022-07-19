@@ -1,14 +1,4 @@
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  Dimensions,
-  TouchableOpacity,
-  Linking,
-  ActivityIndicator,
-} from "react-native";
+import { FlatList, StyleSheet, Text, View, Image, TouchableOpacity, Linking, ActivityIndicator } from "react-native";
 import React, { useState, useEffect } from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
 import { MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
@@ -126,7 +116,7 @@ const DislikedPage = () => {
     );
   };
 
-  if (recipesLoaded) {
+  if (recipesLoaded && dislikedData.length > 0) {
     return (
       <View style={styles.container}>
         <FlatList
@@ -138,9 +128,15 @@ const DislikedPage = () => {
         />
       </View>
     );
+  } else if (recipesLoaded) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center" }}>Du har inga ogillade recept!</Text>
+      </View>
+    );
   } else {
     return (
-      <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: lime }}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -155,6 +151,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: lime,
   },
   card: {
     width: "95%",

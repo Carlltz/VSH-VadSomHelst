@@ -25,7 +25,7 @@ const HomeScreen = ({ setParentPage, currentParentPage }) => {
   const [likedIcon, setLikedIcon] = useState("favorite-outline");
   const [userIcon, setUserIcon] = useState("user");
   const [bookmarkIcon, setBookmarkIcon] = useState("bookmark-o");
-  const [dislikedIcon, setDislikedIcon] = useState("heart-broken-outline");
+  const [settingsIcon, setSettingsIcon] = useState("settings-outline");
 
   const hwAnim = useRef(new Animated.Value(45)).current;
   const leftAnim = useRef(new Animated.Value(-45 / 2)).current;
@@ -37,7 +37,7 @@ const HomeScreen = ({ setParentPage, currentParentPage }) => {
     setLikedIcon("favorite-outline");
     setUserIcon("user");
     setBookmarkIcon("bookmark-o");
-    setDislikedIcon("heart-broken-outline");
+    setSettingsIcon("settings-outline");
 
     Animated.timing(hwAnim, {
       toValue: 45,
@@ -104,8 +104,8 @@ const HomeScreen = ({ setParentPage, currentParentPage }) => {
       case "bookmarked":
         setBookmarkIcon("bookmark");
         break;
-      case "disliked":
-        setDislikedIcon("heart-broken");
+      case "settings":
+        setSettingsIcon("settings-sharp");
         break;
     }
     setParentPage(page);
@@ -139,8 +139,8 @@ const HomeScreen = ({ setParentPage, currentParentPage }) => {
   return (
     <View style={styles.container}>
       <View style={styles.flexIcons}>
-        <TouchableOpacity style={styles.blobPlace} onPress={() => setPage("disliked")}>
-          <MaterialCommunityIcons name={dislikedIcon} size={optionsSize + 4} color={navy} />
+        <TouchableOpacity style={styles.blobPlace} onPress={() => setPage("settings")}>
+          <Ionicons name={settingsIcon} size={optionsSize} color={navy} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.blobPlace} onPress={() => setPage("liked")}>
           <MaterialIcons name={likedIcon} size={optionsSize + 4} color={navy} />

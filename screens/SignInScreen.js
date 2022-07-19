@@ -23,7 +23,7 @@ const SignInScreen = ({ navigation }) => {
     const userChanged = onAuthStateChanged(auth, (user) => {
       if (user) {
         if (user.displayName) {
-          navigation.navigate("HomeScreen");
+          navigation.replace("HomeScreen");
         }
       }
     });
@@ -73,7 +73,7 @@ const SignInScreen = ({ navigation }) => {
       if (!taken) {
         createUserWithEmailAndPassword(auth, email, password)
           .then((userCredetials) => {
-            updateUser().then(() => navigation.navigate("HomeScreen"));
+            updateUser().then(() => navigation.replace("HomeScreen"));
           })
           .catch((error) => {
             if (error.code == "auth/email-already-in-use") {

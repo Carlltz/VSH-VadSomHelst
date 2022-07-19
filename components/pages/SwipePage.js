@@ -17,7 +17,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import Swiper from "react-native-deck-swiper";
-import { MaterialCommunityIcons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, FontAwesome, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { auth, db } from "../../firebase";
 import {
   collection,
@@ -89,6 +89,7 @@ const SwipePage = ({ setParentPage }) => {
   const [bookmarkIcon, setBookmarkIcon] = useState("bookmark-o");
   const [lastCardIndex, setLastCardIndex] = useState(-1);
   const [reachedEnd, setReachedEnd] = useState(false);
+  const [groupPopupVisible, setGroupPopupVisible] = useState(false);
 
   //Saved Text popup
   const [savedText, setSavedText] = useState(null);
@@ -270,7 +271,12 @@ const SwipePage = ({ setParentPage }) => {
 
   if (recipesLoaded && !reachedEnd) {
     return (
-      <View style={{ width: "100%", height: "100%" }}>
+      <View> 
+        <TouchableOpacity style={styles.groupContainer}>
+          <Text style={{fontSize: 20, fontWeight: "500", flex: 1, textAlign: "center"}}>{currentGroup}</Text>
+          <FontAwesome5 name="exchange-alt" size={30} color="black" />
+        </TouchableOpacity>
+      <View style={{ width: "100%", flex: 1 }}>
         <Swiper
           ref={useSwiper}
           animateCardOpacity
@@ -300,6 +306,15 @@ const SwipePage = ({ setParentPage }) => {
         <Animated.View pointerEvents="none" style={[styles.pop, { opacity: smallPop }]}>
           <Text style={{ color: "white", fontSize: 17 }}>{savedText}</Text>
         </Animated.View>
+      </View>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={groupPopupVisible}>
+        <View style={[styles.modalPopup, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
+          
+        </View>
+      </Modal>
       </View>
     );
   } else if (reachedEnd) {
@@ -356,5 +371,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 100,
     alignSelf: "center",
+  },
+  groupContainer: {
+    width: "100%",
+    padding: 15,
+    backgroundColor: mint,
+    alignItems: "center"
+  },
+  modalPopup: {
+    width: "80%",
+    alignSelf: "center",
+    marginTop: "auto",
+    marginBottom: "auto",
+    borderRadius: 20,
+    backgroundColor: mint,
   },
 });

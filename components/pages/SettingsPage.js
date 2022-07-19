@@ -69,10 +69,7 @@ const SettingsPage = () => {
       <Modal
         animationType="fade"
         transparent={true}
-        visible={logOutPopup}
-        onRequestClose={() => {
-          setModalVisible(!modalVisible);
-        }}>
+        visible={logOutPopup}>
         <View style={[styles.modalPopup, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
           <Text style={{ textAlign: "center", fontSize: 20, fontWeight: "600", marginVertical: 15, color: navy }}>
             Logga ut?

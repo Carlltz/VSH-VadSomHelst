@@ -92,7 +92,7 @@ const SwipePage = ({ setParentPage }) => {
   const [lastCardIndex, setLastCardIndex] = useState(-1);
   const [reachedEnd, setReachedEnd] = useState(false);
   const [groupPopupVisible, setGroupPopupVisible] = useState(false);
-  const [currentGroup, setCurrentGroup] = useState("Familj");
+  const [currentGroup, setCurrentGroup] = useState(null);
 
   //Saved Text popup
   const [savedText, setSavedText] = useState(null);
@@ -132,7 +132,7 @@ const SwipePage = ({ setParentPage }) => {
   }
 
   //test appState
-  const appState = useRef(AppState.currentState);
+  /* const appState = useRef(AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
 
   useEffect(() => {
@@ -153,10 +153,9 @@ const SwipePage = ({ setParentPage }) => {
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, []); */
 
   // getting DATA
-  let recipes = [];
 
   useEffect(() => {
     // 👇️ set isMounted to true
@@ -167,14 +166,12 @@ const SwipePage = ({ setParentPage }) => {
     }
 
     async function getDATA() {
+      let recipes = [];
       const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
       const userData = userSnap.data();
-      let swiped = [];
-      if (userData) {
-        const dataLiked = "liked" in userData ? userData.liked : [];
-        userData.disliked;
-        swiped = [...userData.liked, ...userData.disliked];
-      }
+      const swiped = [...userData.liked, ...userData.disliked];
+
+      setCurrentGroup(userData.groups[0]);
 
       const recipesSnap = await getDocs(collection(db, "recipes"));
       recipesSnap.forEach((doc) => {
@@ -212,40 +209,61 @@ const SwipePage = ({ setParentPage }) => {
       );
     } else if (!reachedEnd) {
       return (
-        <View style={{ width: "100%", flex: 1, backgroundColor: lemon }}>
-          <Swiper
-            ref={useSwiper}
-            animateCardOpacity
-            cards={recipesSnaps}
-            renderCard={(card) => <Card item={card} />}
-            cardIndex={lastCardIndex + 1}
-            backgroundColor={lime}
-            stackSize={2}
-            animateOverlayLabelsOpacity
-            containerStyle={styles.mainScroll}
-            style={styles.mainSwipe}
-            cardStyle={{
-              top: 8,
-              left: 8,
-              bottom: 8,
-              right: 8,
-              width: "auto",
-              height: "auto",
-            }}
-            useViewOverflow={false}
-            disableTopSwipe={true}
-            disableBottomSwipe={true}
-            onSwipedRight={(index) => updateLiked(recipesSnaps[index].id)}
-            onSwipedLeft={(index) => updateDisliked(recipesSnaps[index].id)}
-            onSwiped={(index) => {
-              setLastCardIndex(index);
-            }}
-            verticalSwipe={false}
-            horizontalThreshold={40}
-            swipeAnimationDuration={200}
-            onSwipedAll={() => setReachedEnd(true)}
-            onTapCard={(index) => Linking.openURL(recipesSnaps[index].url)}
-          />
+        <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: "100%", flex: 1, backgroundColor: lemon }}>
+            <Swiper
+              ref={useSwiper}
+              animateCardOpacity
+              cards={recipesSnaps}
+              renderCard={(card) => <Card item={card} />}
+              cardIndex={lastCardIndex + 1}
+              backgroundColor={lime}
+              stackSize={2}
+              animateOverlayLabelsOpacity
+              containerStyle={styles.mainScroll}
+              style={styles.mainSwipe}
+              cardStyle={{
+                top: 8,
+                left: 8,
+                bottom: 8,
+                right: 8,
+                width: "auto",
+                height: "auto",
+              }}
+              useViewOverflow={false}
+              disableTopSwipe={true}
+              disableBottomSwipe={true}
+              onSwipedRight={(index) => updateLiked(recipesSnaps[index].id)}
+              onSwipedLeft={(index) => updateDisliked(recipesSnaps[index].id)}
+              onSwiped={(index) => {
+                setLastCardIndex(index);
+              }}
+              verticalSwipe={false}
+              horizontalThreshold={40}
+              swipeAnimationDuration={200}
+              onSwipedAll={() => setReachedEnd(true)}
+              onTapCard={(index) => Linking.openURL(recipesSnaps[index].url)}
+            />
+          </View>
+          <View style={{ flexDirection: "row", width: "100%", alignItems: "center", justifyContent: "space-around" }}>
+            <TouchableOpacity style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}>
+              <MaterialCommunityIcons name="account-group" size={30} color="black" />
+              <Text
+                numberOfLines={1}
+                style={{ fontSize: 17, fontWeight: "500", textAlign: "center", marginHorizontal: 4, flexShrink: 1 }}>
+                {currentGroup}
+              </Text>
+              <FontAwesome5 name="exchange-alt" size={20} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4), { opacity: 0 }]}>
+              <MaterialCommunityIcons name="account-group" size={30} color="black" />
+              <Text style={{ fontSize: 20, fontWeight: "500", textAlign: "center", marginHorizontal: 10 }}>
+                {currentGroup}
+              </Text>
+              <FontAwesome5 name="exchange-alt" size={20} color="black" />
+            </TouchableOpacity>
+          </View>
         </View>
       );
     } else {
@@ -262,22 +280,7 @@ const SwipePage = ({ setParentPage }) => {
   return (
     <View style={{ alignSelf: "stretch", flex: 1, alignItems: "center", justifyContent: "center" }}>
       <SwiperOrEmtpy />
-      <View style={{ flexDirection: "row", width: "100%", alignItems: "center", justifyContent: "space-around" }}>
-        <TouchableOpacity style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}>
-          <MaterialCommunityIcons name="account-group" size={30} color="black" />
-          <Text style={{ fontSize: 20, fontWeight: "500", textAlign: "center", marginHorizontal: 10 }}>
-            {currentGroup}
-          </Text>
-          <FontAwesome5 name="exchange-alt" size={20} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}>
-          <MaterialCommunityIcons name="account-group" size={30} color="black" />
-          <Text style={{ fontSize: 20, fontWeight: "500", textAlign: "center", marginHorizontal: 10 }}>
-            {currentGroup}
-          </Text>
-          <FontAwesome5 name="exchange-alt" size={20} color="black" />
-        </TouchableOpacity>
-      </View>
+
       <Animated.View pointerEvents="none" style={[styles.pop, { opacity: smallPop }]}>
         <Text style={{ color: "white", fontSize: 17 }}>{savedText}</Text>
       </Animated.View>
@@ -332,14 +335,15 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   groupContainer: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     backgroundColor: mint,
     alignItems: "center",
     marginBottom: 8,
     borderRadius: 20,
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "space-between",
+    width: Dimensions.get("window").width * 0.4,
   },
   modalPopup: {
     width: "80%",

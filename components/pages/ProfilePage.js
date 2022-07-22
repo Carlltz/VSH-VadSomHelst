@@ -11,13 +11,15 @@ import {
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
-import { collection, doc, getDoc, query, getDocs, where } from "firebase/firestore";
+import { collection, doc, getDoc, query, getDocs, where, addDoc } from "firebase/firestore";
 import { auth, db } from "../../firebase";
-import { FontAwesome, Entypo, MaterialIcons } from "@expo/vector-icons";
+import { FontAwesome, Entypo, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import Person from "../Person";
+import { useNavigation } from "@react-navigation/native";
 
 const ProfilePage = () => {
+  const navigation = useNavigation();
   const [loaded, setLoaded] = useState(false);
   const [amountSwiped, setAmountSwiped] = useState(null);
   const [amountLiked, setAmountLiked] = useState(null);
@@ -264,15 +266,21 @@ const ProfilePage = () => {
     });
     if (memberIds.length === groupMembers.length) {
       let finishedMembers = [];
-      memberIds.forEach((member) => {
+
+      // This adds all members to the group
+      /* memberIds.forEach((member) => {
         finishedMembers.push({ [member]: { disliked: [], liked: [] } });
       });
       let finishedObject = {};
       finishedMembers.forEach((member) => {
         finishedObject = { ...finishedObject, ...member };
-      });
-      finishedObject = { ...finishedObject, name: createGroupName, users: memberIds };
-      console.log(finishedObject);
+      }); */
+      const finishedObject = {
+        ...{ [auth.currentUser.uid]: { disliked: [], liked: [] } },
+        name: createGroupName,
+        users: memberIds.concat(auth.currentUser.uid),
+      };
+      await addDoc(collection(db, "groups"), finishedObject);
     }
   }
 
@@ -378,6 +386,29 @@ const ProfilePage = () => {
             <Text style={{ fontWeight: "400", fontSize: 16 }}>Vänner: {friends.length}</Text>
           </View>
         </View>
+        <View style={{ flexDirection: "row", alignSelf: "stretch", justifyContent: "space-evenly" }}>
+          <TouchableOpacity
+            style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+            onPress={() => navigation.push("GroupInvites")}>
+            <MaterialCommunityIcons name="account-group" size={30} color="black" />
+            <Text
+              numberOfLines={2}
+              style={{ fontSize: 16, fontWeight: "500", textAlign: "center", marginLeft: 4, flexShrink: 1 }}>
+              Grupp Inbjudningar
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            disabled
+            style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+            onPress={() => navigation.push("GroupInvites")}>
+            <MaterialCommunityIcons name="account-group" size={30} color="black" />
+            <Text
+              numberOfLines={1}
+              style={{ fontSize: 16, fontWeight: "500", textAlign: "center", marginLeft: 4, flexShrink: 1 }}>
+              Dina Grupper
+            </Text>
+          </TouchableOpacity>
+        </View>
         <View style={[styles.friendsView, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
           <View style={[styles.searchContainer, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
             <Text style={{ fontWeight: "500", fontSize: 24 }}>Sök efter användare:</Text>
@@ -477,5 +508,16 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
     alignSelf: "stretch",
     justifyContent: "center",
+  },
+  groupContainer: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: lemon,
+    alignItems: "center",
+    marginTop: 4,
+    borderRadius: 20,
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    width: Dimensions.get("window").width * 0.465,
   },
 });

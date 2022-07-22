@@ -9,6 +9,7 @@ import HomeScreen from "./screens/HomeScreen";
 import DislikedPage from "./components/pages/DislikedPage";
 import { lime, lemon, teal, mint, navy } from "./styles/colors";
 import ChangeGroup from "./components/pages/ChangeGroup";
+import GroupInvites from "./components/pages/GroupInvites";
 
 const Stack = createNativeStackNavigator();
 
@@ -37,6 +38,16 @@ export default function App() {
             /* Could set a custom header in options to specify the height if wanted */
             options={{
               title: "Ändra grupp",
+              headerStyle: {
+                backgroundColor: mint,
+              },
+            }}
+          />
+          <Stack.Screen
+            name="GroupInvites"
+            component={GroupInvites}
+            options={{
+              title: "Grupp inbjudningar",
               headerStyle: {
                 backgroundColor: mint,
               },

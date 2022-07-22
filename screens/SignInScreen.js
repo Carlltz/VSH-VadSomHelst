@@ -124,6 +124,7 @@ const SignInScreen = ({ navigation }) => {
               value={email}
               onChangeText={setEmail}
               style={[styles.input, { marginTop: 8 }]}
+              keyboardType="email-address"
             />
             <TextInput
               placeholder="Lösenord:"
@@ -167,7 +168,13 @@ const SignInScreen = ({ navigation }) => {
           style={styles.signSquare}>
           <Text style={{ fontSize: 28, fontWeight: "bold", color: navy }}>VadSomHelst</Text>
           <View style={styles.inputTexts}>
-            <TextInput placeholder="Mail-adress:" value={email} onChangeText={setEmail} style={styles.input} />
+            <TextInput
+              placeholder="Mail-adress:"
+              value={email}
+              onChangeText={setEmail}
+              style={styles.input}
+              keyboardType="email-address"
+            />
             <TextInput
               placeholder="Lösenord:"
               value={password}

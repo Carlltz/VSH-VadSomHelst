@@ -75,7 +75,7 @@ const Card = ({ item }) => {
       <ImageBackground style={[styles.cardImage]} imageStyle={[{ borderRadius: 15 }]} source={{ uri: item.image }}>
         <TouchableOpacity onPress={() => updateSaved()}>
           <View style={[styles.favoriteBtn]}>
-            <FontAwesome name={bookmarkIcon} size={34} color={navy} />
+            <FontAwesome name={bookmarkIcon} size={34} color="black" />
           </View>
         </TouchableOpacity>
       </ImageBackground>
@@ -96,11 +96,11 @@ const Card = ({ item }) => {
           justifyContent: "space-evenly",
         }}>
         <View style={{ alignItems: "center" }}>
-          <MaterialCommunityIcons name="clock-time-five-outline" size={26} color={navy} />
+          <MaterialCommunityIcons name="clock-time-five-outline" size={26} color="black" />
           <Text style={{ fontSize: 20, fontWeight: "500" }}>{item.time}</Text>
         </View>
         <View style={{ alignItems: "center" }}>
-          <MaterialCommunityIcons name="food-takeout-box-outline" size={26} color={navy} />
+          <MaterialCommunityIcons name="food-takeout-box-outline" size={26} color="black" />
           <Text style={{ fontSize: 20, fontWeight: "500" }}>
             {item.ingredientAmount} {item.ingredientAmount == 1 ? "Ingrediens" : "Ingredienser"}
           </Text>
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   favoriteBtn: {
-    backgroundColor: "rgba(117, 201, 183, 0.8)",
+    backgroundColor: "rgba(117, 201, 183, 0.7)",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 15,

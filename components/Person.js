@@ -6,7 +6,7 @@ import { FontAwesome, Entypo, MaterialIcons } from "@expo/vector-icons";
 import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { auth, db } from "../firebase";
 
-const Person = ({ name, friend, addFriend, removeFriend }) => {
+const Person = ({ name, friend, addFriend, removeFriend, addToGroup }) => {
   const [friendsIcon, setFriendsIcon] = useState(friend ? "check-circle" : "add-circle-outline");
   const [friends, setFriends] = useState(friend);
 
@@ -39,7 +39,11 @@ const Person = ({ name, friend, addFriend, removeFriend }) => {
 
       <Text style={{ fontWeight: "400", fontSize: 20, paddingHorizontal: 4, paddingVertical: 15 }}>{name}</Text>
       <View style={{ marginLeft: "auto" }}>
-        <TouchableOpacity style={local.addBtn} onPress={() => {}}>
+        <TouchableOpacity
+          style={local.addBtn}
+          onPress={() => {
+            addToGroup(name);
+          }}>
           <MaterialIcons name={"group-add"} size={30} color="black" />
         </TouchableOpacity>
       </View>

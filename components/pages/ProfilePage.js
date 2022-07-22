@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, query, getDocs, where } from "firebase/firestore";
 import { auth, db } from "../../firebase";
 import { FontAwesome, Entypo, MaterialIcons } from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
@@ -26,8 +26,19 @@ const ProfilePage = () => {
   const [searched, setSearched] = useState(false);
   const [searchFinished, setSearchFinished] = useState(false);
   const [friends, setFriends] = useState([]);
+  const [creatingGroup, setCreatingGroup] = useState(true);
+  const [uploadRecipes, setuploadRecipes] = useState(false);
+  const [createGroupName, setCreateGroupName] = useState("");
+  const [groupMembers, setGroupMembers] = useState([]);
+  const [reloadFlatList, setReloadFlatList] = useState(false);
 
   const [searchResult, setSearchResult] = useState([]);
+
+  useEffect(() => {
+    console.log(groupMembers);
+    if (groupMembers.length === 0) setCreatingGroup(false);
+    else setCreatingGroup(true);
+  }, [reloadFlatList]);
 
   useEffect(() => {
     // 👇️ set isMounted to true
@@ -75,55 +86,6 @@ const ProfilePage = () => {
       },
     });
 
-    /* const person = ({ item }) => {
-      const local = StyleSheet.create({
-        container: {
-          alignSelf: "stretch",
-          backgroundColor: lime,
-          marginTop: 8,
-          borderRadius: 15,
-          flexDirection: "row",
-          alignItems: "center",
-        },
-        addBtn: {
-          aspectRatio: 1,
-          alignSelf: "stretch",
-          alignItems: "center",
-          justifyContent: "center",
-          flex: 1,
-        },
-        image: {
-          flex: 1,
-          width: "100%",
-          height: "100%",
-          resizeMode: "contain",
-        },
-      });
-
-      let friendsIcon = friends.includes(item) ? "check-circle" : "add-circle-outline";
-
-      return (
-        <View style={[local.container, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}>
-          <View
-            style={{
-              aspectRatio: 1,
-              alignSelf: "stretch",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 8,
-            }}>
-            <Image style={local.image} source={require("../../assets/profilePic.jpg")} />
-          </View>
-
-          <Text style={{ fontWeight: "400", fontSize: 20, paddingHorizontal: 4, paddingVertical: 15 }}>{item}</Text>
-          <View style={{ marginLeft: "auto" }}>
-            <TouchableOpacity style={local.addBtn}>
-              <MaterialIcons name={friendsIcon} size={30} color="black" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
-    }; */
     if (!searched) {
       return (
         <View style={local.friends}>
@@ -147,6 +109,15 @@ const ProfilePage = () => {
                     return prev;
                   })
                 }
+                addToGroup={(val) => {
+                  if (!groupMembers.includes(val)) {
+                    setGroupMembers((prev) => {
+                      prev.push(val);
+                      return prev;
+                    });
+                    setReloadFlatList((val) => !val);
+                  }
+                }}
               />
             )}
             showsVerticalScrollIndicator={false}
@@ -208,7 +179,192 @@ const ProfilePage = () => {
     return (amountLiked / amountDisliked).toFixed(2);
   };
 
-  if (loaded) {
+  const local = StyleSheet.create({
+    groupContainer: {
+      marginTop: Dimensions.get("window").width * 0.02,
+      width: "96%",
+      backgroundColor: mint,
+      height: 200,
+      borderRadius: 20,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-evenly",
+      padding: 10,
+    },
+    groupView: {
+      alignSelf: "stretch",
+      backgroundColor: teal,
+      flex: 1,
+      borderRadius: 12,
+      alignItems: "center",
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      justifyContent: "space-evenly",
+    },
+    nameInput: {
+      borderRadius: 15,
+      paddingHorizontal: 15,
+      paddingVertical: 8,
+      backgroundColor: "white",
+      width: "100%",
+      fontSize: 14,
+    },
+    previousRecipes: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    confirmBtn: {
+      backgroundColor: lime,
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
+    container: {
+      alignSelf: "stretch",
+      backgroundColor: lime,
+      marginTop: 6,
+      borderRadius: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+    },
+    flatList: {
+      alignSelf: "stretch",
+      height: "100%",
+    },
+  });
+
+  const groupPerson = (item) => {
+    item = item.item;
+    return (
+      <TouchableOpacity
+        style={[local.container, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+        onPress={() => {
+          setGroupMembers((prev) => {
+            prev.splice(prev.indexOf(item), 1);
+            return prev;
+          });
+          setReloadFlatList((val) => !val);
+        }}>
+        <Text numberOfLines={1} style={{ fontSize: 16, flexShrink: 1 }}>
+          {item}
+        </Text>
+        <Entypo name="minus" size={26} color="black" style={{ marginLeft: "auto" }} />
+      </TouchableOpacity>
+    );
+  };
+
+  let memberIds = [];
+  async function getMemeberIds(memberName) {
+    const q = query(collection(db, "usernames"), where("usrname", "in", [memberName]));
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((val) => {
+      memberIds.push(val.id);
+    });
+    if (memberIds.length === groupMembers.length) {
+      let finishedMembers = [];
+      memberIds.forEach((member) => {
+        finishedMembers.push({ [member]: { disliked: [], liked: [] } });
+      });
+      let finishedObject = {};
+      finishedMembers.forEach((member) => {
+        finishedObject = { ...finishedObject, ...member };
+      });
+      finishedObject = { ...finishedObject, name: createGroupName, users: memberIds };
+      console.log(finishedObject);
+    }
+  }
+
+  async function createGroup() {
+    if (createGroupName === "") alert("Vänligen ange ett gruppnamn först");
+    else {
+      groupMembers.forEach((name) => {
+        getMemeberIds(name);
+      });
+    }
+  }
+
+  if (loaded && creatingGroup) {
+    return (
+      <View style={styles.container}>
+        <View style={local.groupContainer}>
+          <View style={[local.groupView, { marginRight: 10 }]}>
+            <Text style={{ fontWeight: "500", fontSize: 20 }}>Ny Grupp:</Text>
+            <TextInput
+              placeholder="Gruppnamn:"
+              value={createGroupName}
+              onChangeText={setCreateGroupName}
+              style={local.nameInput}
+            />
+            <TouchableOpacity style={local.previousRecipes} onPress={() => setuploadRecipes((val) => !val)}>
+              <MaterialIcons name={uploadRecipes ? "check-box" : "check-box-outline-blank"} size={24} color="black" />
+              <Text
+                style={{
+                  fontWeight: "400",
+                  fontSize: 14,
+                  marginLeft: 5,
+                  textAlign: "center",
+                }}>
+                Ladda upp recept
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[local.confirmBtn, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}
+              onPress={() => createGroup()}>
+              <Text
+                style={{
+                  fontWeight: "500",
+                  fontSize: 15,
+                }}>
+                Skapa Grupp
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={[local.groupView, { paddingVertical: 0, paddingHorizontal: 0 }]}>
+            <FlatList
+              contentContainerStyle={{ paddingBottom: 6, paddingHorizontal: 8 }}
+              style={local.flatList}
+              data={groupMembers}
+              extraData={reloadFlatList}
+              renderItem={groupPerson}
+              /* keyExtractor={(item) => item.id} */
+              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+        </View>
+        <View style={[styles.friendsView, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
+          <View style={[styles.searchContainer, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
+            <Text style={{ fontWeight: "500", fontSize: 24 }}>Sök efter användare:</Text>
+            <View style={{ flexDirection: "row", marginTop: 2 }}>
+              <View style={styles.inputIconCombo}>
+                <TextInput
+                  placeholder="Användarnamn:"
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  style={styles.searchInput}
+                />
+                {searchText.length > 0 ? (
+                  <TouchableOpacity style={styles.crossStyle} onPress={() => setSearchText("")}>
+                    <Entypo name="cross" size={34} color="black" />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              <TouchableOpacity
+                style={styles.searchGlass}
+                onPress={() => {
+                  searchText.length > 0 ? search(searchText) : null;
+                }}>
+                <FontAwesome name="search" size={30} color={navy} />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <FriendsOrSearch />
+        </View>
+      </View>
+    );
+  } else if (loaded) {
     return (
       <View style={styles.container}>
         <View style={styles.profileView}>
@@ -267,6 +423,7 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     flex: 1,
+    alignItems: "center",
   },
   profileView: {
     width: "100%",

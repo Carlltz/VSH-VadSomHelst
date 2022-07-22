@@ -11,16 +11,22 @@ import {
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
-import { MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
+import { MaterialCommunityIcons, FontAwesome, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import { collection, doc, getDoc, addDoc, getDocs, setDoc } from "firebase/firestore";
 import { auth, db } from "../../firebase";
+import { useNavigation, useIsFocused } from "@react-navigation/native";
 
 const LikedPage = () => {
   const [recipesLoaded, setRecipesLoaded] = useState(false);
   //const [liked, setLiked] = useState([]);
   //const [recipesSnaps, setRecipesSnaps] = useState(null);
   const [likedData, setLikedData] = useState([]);
+  const [currentGroupName, setCurrentGroupName] = useState(null);
+  const [currentGroupId, setCurrentGroupId] = useState(null);
+  const isFocused = useIsFocused();
+
+  const navigation = useNavigation();
 
   function getStar(val) {
     switch (val) {
@@ -36,42 +42,59 @@ const LikedPage = () => {
   let recipes = [];
 
   useEffect(() => {
-    // 👇️ set isMounted to true
-    let isMounted = true;
+    if (!isFocused) setRecipesLoaded(false);
+    else {
+      // 👇️ set isMounted to true
+      let isMounted = true;
 
-    async function getDATA() {
-      const recipesSnap = await getDocs(collection(db, "recipes"));
-      recipesSnap.forEach((doc) => {
-        const data = doc.data();
-        data.id = doc.id;
-        recipes.push(data);
-      });
-      //setRecipesSnaps(recipes);
+      async function getDATA() {
+        const recipesSnap = await getDocs(collection(db, "recipes"));
+        recipesSnap.forEach((doc) => {
+          const data = doc.data();
+          data.id = doc.id;
+          recipes.push(data);
+        });
 
-      const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
-      const userData = userSnap.data();
-      //setLiked(userData.liked);
+        const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+        const userData = userSnap.data();
 
-      let like = [];
-      recipes.forEach((rec) => {
-        if (userData.liked.includes(rec.id)) {
-          like.push(rec);
+        let likedRecipes;
+
+        if (userData.groups[0] != "Privat") {
+          const groupSnap = await getDoc(doc(db, "groups", userData.groups[0]));
+          const groupData = groupSnap.data();
+          setCurrentGroupName(groupData.name);
+          setCurrentGroupId(groupSnap.id);
+
+          likedRecipes = groupData[auth.currentUser.uid].liked;
+        } else {
+          setCurrentGroupName(userData.groups[0]);
+          setCurrentGroupId(auth.currentUser.uid);
+
+          likedRecipes = userData.liked;
         }
-      });
-      setLikedData(like);
 
-      setRecipesLoaded(true);
+        let like = [];
+        recipes.forEach((rec) => {
+          if (likedRecipes.includes(rec.id)) {
+            like.push(rec);
+          }
+        });
+        setLikedData(like);
+
+        setRecipesLoaded(true);
+      }
+
+      if (!recipesLoaded) {
+        getDATA();
+      }
+
+      return () => {
+        // 👇️ when component unmounts, set isMounted to false
+        isMounted = false;
+      };
     }
-
-    if (!recipesLoaded) {
-      getDATA();
-    }
-
-    return () => {
-      // 👇️ when component unmounts, set isMounted to false
-      isMounted = false;
-    };
-  }, []);
+  }, [isFocused]);
 
   const renderCard = ({ item }) => {
     /*     let x = 0,
@@ -127,18 +150,58 @@ const LikedPage = () => {
     );
   };
 
+  const ListOrText = () => {
+    if (likedData.length > 0) {
+      return (
+        <View style={styles.container}>
+          <FlatList
+            contentContainerStyle={{ paddingBottom: 0, paddingTop: 0 }}
+            style={styles.flatList}
+            data={likedData}
+            renderItem={renderCard}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+          />
+        </View>
+      );
+    } else if (recipesLoaded) {
+      return (
+        <View style={styles.container}>
+          <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center" }}>
+            Gruppen {currentGroupName} har inga gillade recept!
+          </Text>
+        </View>
+      );
+    }
+  };
+
   if (recipesLoaded) {
     return (
       <View style={styles.container}>
-        <FlatList
-          contentContainerStyle={{ paddingBottom: 8, paddingTop: 0 }}
-          style={styles.flatList}
-          data={likedData}
-          renderItem={renderCard}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          showsHorizontalScrollIndicator={false}
-        />
+        <View style={{ flexDirection: "row", width: "100%", justifyContent: "space-evenly" }}>
+          <TouchableOpacity
+            style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+            onPress={() => navigation.push("ChangeGroup")}>
+            <MaterialCommunityIcons name="account-group" size={30} color="black" />
+            <Text
+              numberOfLines={1}
+              style={{ fontSize: 17, fontWeight: "500", textAlign: "center", marginHorizontal: 4, flexShrink: 1 }}>
+              {currentGroupName}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+            onPress={() => {}}>
+            <Ionicons name="filter" size={28} color="black" />
+            <Text
+              numberOfLines={1}
+              style={{ fontSize: 17, fontWeight: "500", textAlign: "center", marginHorizontal: 4, flexShrink: 1 }}>
+              Filter
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <ListOrText />
       </View>
     );
   } else {
@@ -166,7 +229,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 12,
     alignSelf: "center",
-    marginTop: 8,
+    marginBottom: 8,
     flexDirection: "row",
   },
   cardImage: {
@@ -178,5 +241,16 @@ const styles = StyleSheet.create({
   flatList: {
     width: "100%",
     flex: 1,
+  },
+  groupContainer: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: mint,
+    alignItems: "center",
+    marginVertical: 8,
+    borderRadius: 20,
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    width: Dimensions.get("window").width * 0.4,
   },
 });

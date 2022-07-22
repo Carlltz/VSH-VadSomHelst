@@ -51,7 +51,7 @@ const SettingsPage = () => {
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.reset, { backgroundColor: teal }]}
+        style={[styles.reset, { backgroundColor: teal, marginTop: 10 }]}
         onPress={() => {
           navigation.push("Disliked");
         }}>
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     width: Dimensions.get("window").width * 0.9,
     backgroundColor: "#DB2432",
     padding: 10,
-    marginTop: Dimensions.get("window").width * 0.05,
+    marginBottom: Dimensions.get("window").width * 0.05,
     borderRadius: 10,
   },
   pop: {

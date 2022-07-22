@@ -33,7 +33,15 @@ const SignInScreen = ({ navigation }) => {
   const logIn = () => {
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredetials) => {})
-      .catch((error) => alert(error.message));
+      .catch((error) => {
+        if (error.code === "auth/invalid-email") {
+          alert("Ogitlig mail-adress");
+        } else if (error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
+          alert("Felaktig mail eller lösenord");
+        } else {
+          alert(error.message);
+        }
+      });
   };
 
   const updateUser = async () => {
@@ -61,7 +69,7 @@ const SignInScreen = ({ navigation }) => {
   };
 
   const singUp = async () => {
-    if (password == repPassword) {
+    if (password == repPassword && dispName != "") {
       let taken = false;
       const q = query(collection(db, "usernamesTaken"), where("usernamesTaken", "array-contains-any", [dispName]));
       const querySnapshot = await getDocs(q);
@@ -77,16 +85,18 @@ const SignInScreen = ({ navigation }) => {
           })
           .catch((error) => {
             if (error.code == "auth/email-already-in-use") {
-              alert("This email is already in use, try logging in instead.");
+              alert("Denna mail-adress är redan registrerad, testa att logga in istället");
             } else if (error.code == "auth/weak-password") {
-              alert("Please choose a longer password, at least 6 characters.");
+              alert("Lösenordet måste innehåll minst 6 tecken");
             } else {
               alert(error.code);
             }
           });
       } else {
-        alert("Username is already taken, please choose a different one.");
+        alert("Användarnamnet är upptaget, var vänligen välj ett annat istället.");
       }
+    } else if (dispName === "") {
+      alert("Ogiltigt användarnamn");
     } else {
       alert("Passwords do not match.");
     }
@@ -108,22 +118,22 @@ const SignInScreen = ({ navigation }) => {
           style={styles.registerSquare}>
           <Text style={{ fontSize: 28, fontWeight: "bold", color: navy }}>VadSomHelst</Text>
           <View style={styles.inputTexts}>
-            <TextInput placeholder="Display name:" value={dispName} onChangeText={setdispName} style={styles.input} />
+            <TextInput placeholder="Användarnamn:" value={dispName} onChangeText={setdispName} style={styles.input} />
             <TextInput
-              placeholder="Email:"
+              placeholder="Mail-adress:"
               value={email}
               onChangeText={setEmail}
               style={[styles.input, { marginTop: 8 }]}
             />
             <TextInput
-              placeholder="Password:"
+              placeholder="Lösenord:"
               value={password}
               onChangeText={setPassword}
               style={[styles.input, { marginTop: 8 }]}
               secureTextEntry
             />
             <TextInput
-              placeholder="Repeat password:"
+              placeholder="Upprepa lösenord:"
               value={repPassword}
               onChangeText={setRepPassword}
               style={[styles.input, { marginTop: 8 }]}
@@ -157,9 +167,9 @@ const SignInScreen = ({ navigation }) => {
           style={styles.signSquare}>
           <Text style={{ fontSize: 28, fontWeight: "bold", color: navy }}>VadSomHelst</Text>
           <View style={styles.inputTexts}>
-            <TextInput placeholder="Email:" value={email} onChangeText={setEmail} style={styles.input} />
+            <TextInput placeholder="Mail-adress:" value={email} onChangeText={setEmail} style={styles.input} />
             <TextInput
-              placeholder="Password:"
+              placeholder="Lösenord:"
               value={password}
               onChangeText={setPassword}
               style={[styles.input, { marginTop: 8 }]}

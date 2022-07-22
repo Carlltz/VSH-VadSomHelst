@@ -18,7 +18,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { lime, lemon, teal, mint, navy } from "../../styles/colors";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import Swiper from "react-native-deck-swiper";
-import { MaterialCommunityIcons, FontAwesome, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
+import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../../firebase";
 import {
   collection,
@@ -34,6 +34,7 @@ import {
   query,
 } from "firebase/firestore";
 import Card from "../Card";
+import { useNavigation, useIsFocused } from "@react-navigation/native";
 
 //https://github.com/alexbrillant/react-native-deck-swiper
 //https://www.npmjs.com/package/@ilterugur/react-native-deck-swiper-renewed
@@ -92,7 +93,11 @@ const SwipePage = ({ setParentPage }) => {
   const [lastCardIndex, setLastCardIndex] = useState(-1);
   const [reachedEnd, setReachedEnd] = useState(false);
   const [groupPopupVisible, setGroupPopupVisible] = useState(false);
-  const [currentGroup, setCurrentGroup] = useState(null);
+  const [currentGroupName, setCurrentGroupName] = useState(null);
+  const [currentGroupId, setCurrentGroupId] = useState(null);
+  const isFocused = useIsFocused();
+
+  const navigation = useNavigation();
 
   //Saved Text popup
   const [savedText, setSavedText] = useState(null);
@@ -124,11 +129,25 @@ const SwipePage = ({ setParentPage }) => {
   }, [savedText]);
 
   async function updateLiked(val) {
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { liked: arrayUnion(val) });
+    if (currentGroupId === auth.currentUser.uid) {
+      await updateDoc(doc(db, "users", auth.currentUser.uid), { liked: arrayUnion(val) });
+    } else {
+      await updateDoc(doc(db, "groups", currentGroupId), { [`${auth.currentUser.uid}.liked`]: arrayUnion(val) });
+    }
   }
 
   async function updateDisliked(val) {
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { disliked: arrayUnion(val) });
+    if (currentGroupId === auth.currentUser.uid) {
+      await updateDoc(doc(db, "users", auth.currentUser.uid), { disliked: arrayUnion(val) });
+    } else {
+      await updateDoc(doc(db, "groups", currentGroupId), { [`${auth.currentUser.uid}.disliked`]: arrayUnion(val) });
+    }
+  }
+
+  async function changeGroup(val) {
+    const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+    const userData = userSnap.data();
+    //userData.index
   }
 
   //test appState
@@ -158,122 +177,146 @@ const SwipePage = ({ setParentPage }) => {
   // getting DATA
 
   useEffect(() => {
-    // 👇️ set isMounted to true
-    let isMounted = true;
+    if (!isFocused) setRecipesLoaded(false);
+    else {
+      // 👇️ set isMounted to true
+      let isMounted = true;
 
-    async function addRecipe(recipe) {
-      const toAdd = await addDoc(collection(db, "recipes"), recipe);
-    }
+      async function addRecipe(recipe) {
+        const toAdd = await addDoc(collection(db, "recipes"), recipe);
+      }
 
-    async function getDATA() {
-      let recipes = [];
-      const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
-      const userData = userSnap.data();
-      const swiped = [...userData.liked, ...userData.disliked];
+      async function getDATA() {
+        let recipes = [];
+        const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+        const userData = userSnap.data();
 
-      setCurrentGroup(userData.groups[0]);
+        let swiped;
 
-      const recipesSnap = await getDocs(collection(db, "recipes"));
-      recipesSnap.forEach((doc) => {
-        if (!swiped.includes(doc.id)) {
-          const data = doc.data();
-          data.id = doc.id;
-          data.saved = userData.saved.includes(doc.id);
-          recipes.push(data);
+        if (userData.groups[0] != "Privat") {
+          const groupSnap = await getDoc(doc(db, "groups", userData.groups[0]));
+          const groupData = groupSnap.data();
+          setCurrentGroupName(groupData.name);
+          setCurrentGroupId(groupSnap.id);
+
+          const usersData = groupData[auth.currentUser.uid];
+          swiped = [...usersData.liked, ...usersData.disliked];
+        } else {
+          setCurrentGroupName(userData.groups[0]);
+          setCurrentGroupId(auth.currentUser.uid);
+
+          swiped = [...userData.liked, ...userData.disliked];
         }
-      });
-      if (recipes.length == 0) setReachedEnd(true);
-      setRecipesSnaps(recipes);
 
-      setRecipesLoaded(true);
+        const recipesSnap = await getDocs(collection(db, "recipes"));
+        recipesSnap.forEach((doc) => {
+          if (!swiped.includes(doc.id)) {
+            const data = doc.data();
+            data.id = doc.id;
+            data.saved = userData.saved.includes(doc.id);
+            recipes.push(data);
+          }
+        });
+        if (recipes.length == 0) setReachedEnd(true);
+        setRecipesSnaps(recipes);
+
+        setRecipesLoaded(true);
+      }
+
+      if (!recipesLoaded) {
+        getDATA();
+      }
+
+      return () => {
+        // 👇️ when component unmounts, set isMounted to false
+        isMounted = false;
+      };
     }
-
-    if (!recipesLoaded) {
-      getDATA();
-    }
-
-    return () => {
-      // 👇️ when component unmounts, set isMounted to false
-      isMounted = false;
-    };
-  }, []);
+  }, [isFocused]);
 
   const useSwiper = useRef(null).current;
 
   const SwiperOrEmtpy = () => {
-    if (!recipesLoaded) {
-      return (
-        <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <ActivityIndicator size="large" />
-        </View>
-      );
-    } else if (!reachedEnd) {
-      return (
-        <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <View style={{ width: "100%", flex: 1, backgroundColor: lemon }}>
-            <Swiper
-              ref={useSwiper}
-              animateCardOpacity
-              cards={recipesSnaps}
-              renderCard={(card) => <Card item={card} />}
-              cardIndex={lastCardIndex + 1}
-              backgroundColor={lime}
-              stackSize={2}
-              animateOverlayLabelsOpacity
-              containerStyle={styles.mainScroll}
-              style={styles.mainSwipe}
-              cardStyle={{
-                top: 8,
-                left: 8,
-                bottom: 8,
-                right: 8,
-                width: "auto",
-                height: "auto",
-              }}
-              useViewOverflow={false}
-              disableTopSwipe={true}
-              disableBottomSwipe={true}
-              onSwipedRight={(index) => updateLiked(recipesSnaps[index].id)}
-              onSwipedLeft={(index) => updateDisliked(recipesSnaps[index].id)}
-              onSwiped={(index) => {
-                setLastCardIndex(index);
-              }}
-              verticalSwipe={false}
-              horizontalThreshold={40}
-              swipeAnimationDuration={200}
-              onSwipedAll={() => setReachedEnd(true)}
-              onTapCard={(index) => Linking.openURL(recipesSnaps[index].url)}
-            />
+    if (isFocused) {
+      if (!recipesLoaded) {
+        return (
+          <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <ActivityIndicator size="large" />
           </View>
-          <View style={{ flexDirection: "row", width: "100%", alignItems: "center", justifyContent: "space-around" }}>
-            <TouchableOpacity style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}>
-              <MaterialCommunityIcons name="account-group" size={30} color="black" />
-              <Text
-                numberOfLines={1}
-                style={{ fontSize: 17, fontWeight: "500", textAlign: "center", marginHorizontal: 4, flexShrink: 1 }}>
-                {currentGroup}
-              </Text>
-              <FontAwesome5 name="exchange-alt" size={20} color="black" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4), { opacity: 0 }]}>
-              <MaterialCommunityIcons name="account-group" size={30} color="black" />
-              <Text style={{ fontSize: 20, fontWeight: "500", textAlign: "center", marginHorizontal: 10 }}>
-                {currentGroup}
-              </Text>
-              <FontAwesome5 name="exchange-alt" size={20} color="black" />
-            </TouchableOpacity>
+        );
+      } else if (!reachedEnd) {
+        return (
+          <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <View style={{ width: "100%", flex: 1, backgroundColor: lemon }}>
+              <Swiper
+                ref={useSwiper}
+                animateCardOpacity
+                cards={recipesSnaps}
+                renderCard={(card) => <Card item={card} />}
+                cardIndex={lastCardIndex + 1}
+                backgroundColor={lime}
+                stackSize={2}
+                animateOverlayLabelsOpacity
+                containerStyle={styles.mainScroll}
+                style={styles.mainSwipe}
+                cardStyle={{
+                  top: 8,
+                  left: 8,
+                  bottom: 8,
+                  right: 8,
+                  width: "auto",
+                  height: "auto",
+                }}
+                useViewOverflow={false}
+                disableTopSwipe={true}
+                disableBottomSwipe={true}
+                onSwipedRight={(index) => updateLiked(recipesSnaps[index].id)}
+                onSwipedLeft={(index) => updateDisliked(recipesSnaps[index].id)}
+                onSwiped={(index) => {
+                  setLastCardIndex(index);
+                }}
+                verticalSwipe={false}
+                horizontalThreshold={40}
+                swipeAnimationDuration={200}
+                onSwipedAll={() => setReachedEnd(true)}
+                onTapCard={(index) => Linking.openURL(recipesSnaps[index].url)}
+              />
+            </View>
+            <View style={{ flexDirection: "row", width: "100%", alignItems: "center", justifyContent: "space-around" }}>
+              <TouchableOpacity
+                style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+                onPress={() => navigation.push("ChangeGroup")}>
+                <MaterialCommunityIcons name="account-group" size={30} color="black" />
+                <Text
+                  numberOfLines={1}
+                  style={{ fontSize: 18, fontWeight: "500", textAlign: "center", marginHorizontal: 4, flexShrink: 1 }}>
+                  {currentGroupName}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+                onPress={() => {}}>
+                <Ionicons name="filter" size={28} color="black" />
+                <Text
+                  numberOfLines={1}
+                  style={{ fontSize: 18, fontWeight: "500", textAlign: "center", marginHorizontal: 4, flexShrink: 1 }}>
+                  Filter
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      );
+        );
+      } else {
+        return (
+          <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center" }}>
+              Slut på recept i gruppen: {"\n"} {currentGroupName}
+            </Text>
+          </View>
+        );
+      }
     } else {
-      return (
-        <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center" }}>
-            Slut på recept i gruppen: {"\n"} {currentGroup}
-          </Text>
-        </View>
-      );
+      return <View style={{ width: "100%", flex: 1 }}></View>;
     }
   };
 
@@ -285,7 +328,12 @@ const SwipePage = ({ setParentPage }) => {
         <Text style={{ color: "white", fontSize: 17 }}>{savedText}</Text>
       </Animated.View>
       <Modal animationType="fade" transparent={true} visible={groupPopupVisible}>
-        <View style={[styles.modalPopup, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}></View>
+        <View style={[styles.modalPopup, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
+          <Text>Ändra grupp</Text>
+          <TouchableOpacity style={styles.modalClose}>
+            <Text>Stäng</Text>
+          </TouchableOpacity>
+        </View>
       </Modal>
     </View>
   );
@@ -342,15 +390,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderRadius: 20,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-evenly",
     width: Dimensions.get("window").width * 0.4,
   },
   modalPopup: {
-    width: "80%",
+    width: "90%",
+    height: "80%",
     alignSelf: "center",
     marginTop: "auto",
     marginBottom: "auto",
     borderRadius: 20,
-    backgroundColor: mint,
+    backgroundColor: teal,
   },
 });

@@ -4,8 +4,9 @@ import { lime, lemon, teal, mint, navy } from "../../styles/colors";
 
 const SearchPage = () => {
   return (
-    <View>
-      <Text>SearchPage</Text>
+    <View style={{ flex: 1, width: "100%" }}>
+      <View style={{ backgroundColor: lemon, height: 200, width: "100%" }}></View>
+      <View style={{ backgroundColor: teal, height: 500, width: "100%" }}></View>
     </View>
   );
 };

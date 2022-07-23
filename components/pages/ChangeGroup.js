@@ -39,7 +39,6 @@ const ChangeGroup = () => {
 
         setGroups(usersGroups);
         setLoaded(true);
-        console.log(usersGroups);
       }
       //console.log(usersGroups);
     }
@@ -60,6 +59,8 @@ const ChangeGroup = () => {
           getGroup(group);
         });
       } else {
+        usersGroups.splice(privatIndex, 0, { name: "Privat", id: "Privat" });
+        setGroups(usersGroups);
         setLoaded(true);
       }
 

@@ -28,7 +28,7 @@ const ProfilePage = () => {
   const [searched, setSearched] = useState(false);
   const [searchFinished, setSearchFinished] = useState(false);
   const [friends, setFriends] = useState([]);
-  const [creatingGroup, setCreatingGroup] = useState(true);
+  const [creatingGroup, setCreatingGroup] = useState(false);
   const [uploadRecipes, setuploadRecipes] = useState(false);
   const [createGroupName, setCreateGroupName] = useState("");
   const [groupMembers, setGroupMembers] = useState([]);
@@ -298,7 +298,26 @@ const ProfilePage = () => {
       <View style={styles.container}>
         <View style={local.groupContainer}>
           <View style={[local.groupView, { marginRight: 10 }]}>
-            <Text style={{ fontWeight: "500", fontSize: 20 }}>Ny Grupp:</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignSelf: "stretch",
+                justifyContent: "flex-start",
+                alignItems: "center",
+              }}>
+              <TouchableOpacity
+                style={{ position: "absolute", top: -6, left: -4 }}
+                onPress={() => {
+                  setGroupMembers([]);
+                  setCreateGroupName("");
+                  setCreatingGroup(false);
+                }}>
+                <Entypo name="cross" size={34} color="black" />
+              </TouchableOpacity>
+              <Text style={{ fontWeight: "500", fontSize: 20, marginLeft: "auto", marginRight: "auto" }}>
+                Ny Grupp:
+              </Text>
+            </View>
             <TextInput
               placeholder="Gruppnamn:"
               value={createGroupName}
@@ -390,7 +409,7 @@ const ProfilePage = () => {
           <TouchableOpacity
             style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
             onPress={() => navigation.push("GroupInvites")}>
-            <MaterialCommunityIcons name="account-group" size={30} color="black" />
+            <MaterialCommunityIcons name="account-group-outline" size={30} color="black" />
             <Text
               numberOfLines={2}
               style={{ fontSize: 16, fontWeight: "500", textAlign: "center", marginLeft: 4, flexShrink: 1 }}>

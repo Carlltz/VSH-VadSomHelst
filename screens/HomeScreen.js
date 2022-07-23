@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Button, StatusBar, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, Button, StatusBar, TouchableOpacity, SafeAreaView } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";

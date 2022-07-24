@@ -89,7 +89,6 @@ const newDATA = [
 const SwipePage = ({ setParentPage }) => {
   const [recipesLoaded, setRecipesLoaded] = useState(false);
   const [recipesSnaps, setRecipesSnaps] = useState([]);
-  const [bookmarkIcon, setBookmarkIcon] = useState("bookmark-o");
   const [lastCardIndex, setLastCardIndex] = useState(-1);
   const [reachedEnd, setReachedEnd] = useState(false);
   const [groupPopupVisible, setGroupPopupVisible] = useState(false);
@@ -177,8 +176,10 @@ const SwipePage = ({ setParentPage }) => {
   // getting DATA
 
   useEffect(() => {
-    if (!isFocused) setRecipesLoaded(false);
-    else {
+    if (!isFocused) {
+      setRecipesLoaded(false);
+      setReachedEnd(false);
+    } else {
       // 👇️ set isMounted to true
       let isMounted = true;
 
@@ -219,6 +220,7 @@ const SwipePage = ({ setParentPage }) => {
         });
         if (recipes.length == 0) setReachedEnd(true);
         setRecipesSnaps(recipes);
+        console.log(recipes);
 
         setRecipesLoaded(true);
       }
@@ -309,9 +311,33 @@ const SwipePage = ({ setParentPage }) => {
       } else {
         return (
           <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center" }}>
-              Slut på recept i gruppen: {"\n"} {currentGroupName}
-            </Text>
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center" }}>
+                Slut på recept i gruppen: {"\n"} {currentGroupName}
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", width: "100%", alignItems: "center", justifyContent: "space-around" }}>
+              <TouchableOpacity
+                style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+                onPress={() => navigation.push("ChangeGroup")}>
+                <MaterialCommunityIcons name="account-group" size={30} color="black" />
+                <Text
+                  numberOfLines={1}
+                  style={{ fontSize: 18, fontWeight: "500", textAlign: "center", marginHorizontal: 4, flexShrink: 1 }}>
+                  {currentGroupName}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+                onPress={() => {}}>
+                <Ionicons name="filter" size={28} color="black" />
+                <Text
+                  numberOfLines={1}
+                  style={{ fontSize: 18, fontWeight: "500", textAlign: "center", marginHorizontal: 4, flexShrink: 1 }}>
+                  Filter
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         );
       }
@@ -327,14 +353,6 @@ const SwipePage = ({ setParentPage }) => {
       <Animated.View pointerEvents="none" style={[styles.pop, { opacity: smallPop }]}>
         <Text style={{ color: "white", fontSize: 17 }}>{savedText}</Text>
       </Animated.View>
-      <Modal animationType="fade" transparent={true} visible={groupPopupVisible}>
-        <View style={[styles.modalPopup, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
-          <Text>Ändra grupp</Text>
-          <TouchableOpacity style={styles.modalClose}>
-            <Text>Stäng</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
     </View>
   );
 };

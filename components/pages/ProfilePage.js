@@ -417,9 +417,8 @@ const ProfilePage = () => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            disabled
             style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
-            onPress={() => navigation.push("GroupInvites")}>
+            onPress={() => navigation.push("YourGroups")}>
             <MaterialCommunityIcons name="account-group" size={30} color="black" />
             <Text
               numberOfLines={1}

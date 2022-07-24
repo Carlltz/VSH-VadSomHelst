@@ -50,8 +50,8 @@ const GroupInvites = () => {
           console.log(groupData.users.length);
           invitedGroups.push({ name: groupData.name, id: group.id, numMem: groupData.users.length });
         }
-        setGroups(invitedGroups);
       });
+      setGroups(invitedGroups);
 
       setLoaded(true);
     }

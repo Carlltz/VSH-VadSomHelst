@@ -10,6 +10,7 @@ import DislikedPage from "./components/pages/DislikedPage";
 import { lime, lemon, teal, mint, navy } from "./styles/colors";
 import ChangeGroup from "./components/pages/ChangeGroup";
 import GroupInvites from "./components/pages/GroupInvites";
+import YourGroups from "./components/pages/YourGroups";
 
 const Stack = createNativeStackNavigator();
 
@@ -48,6 +49,16 @@ export default function App() {
             component={GroupInvites}
             options={{
               title: "Grupp inbjudningar",
+              headerStyle: {
+                backgroundColor: mint,
+              },
+            }}
+          />
+          <Stack.Screen
+            name="YourGroups"
+            component={YourGroups}
+            options={{
+              title: "Dina Grupper",
               headerStyle: {
                 backgroundColor: mint,
               },

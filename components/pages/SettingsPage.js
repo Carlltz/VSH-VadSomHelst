@@ -22,8 +22,8 @@ import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import { useNavigation } from "@react-navigation/native";
 import { auth, db } from "../../firebase";
 import { doc, setDoc } from "firebase/firestore";
-import deleteAllUserData from "../../functions/deleteAllUserData";
 import * as SecureStore from "expo-secure-store";
+import { deleteFieldsInUserdata } from "../../functions/fetchUsers";
 
 const SettingsPage = () => {
   const [logOutPopup, setLogOutPopup] = useState(false);
@@ -48,12 +48,12 @@ const SettingsPage = () => {
 
   async function resetLiked() {
     showPop();
-    await deleteAllUserData("liked");
+    await deleteFieldsInUserdata("liked");
   }
 
   async function resetDisliked() {
     showPop();
-    await deleteAllUserData("disliked");
+    await deleteFieldsInUserdata("disliked");
   }
 
   const navigation = useNavigation();

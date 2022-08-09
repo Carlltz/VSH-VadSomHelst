@@ -37,7 +37,7 @@ import {
   useNavigation,
   useIsFocused,
 } from "@react-navigation/native";
-import getUserData from "../../functions/getUserData";
+import { getUserdata } from "../../functions/fetchUsers";
 
 const LikedPage = () => {
   const [recipesLoaded, setRecipesLoaded] = useState(false);
@@ -79,7 +79,7 @@ const LikedPage = () => {
           recipes.push(data);
         });
 
-        const userData = await getUserData("groups&liked");
+        const userData = await getUserdata("groups&liked");
 
         let likedRecipes;
 

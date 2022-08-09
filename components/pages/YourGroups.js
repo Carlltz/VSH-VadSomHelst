@@ -40,7 +40,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../../firebase";
 import RenderYourGroups from "../RenderYourGroups";
-import getUserData from "../../functions/getUserData";
+import { getUserdata } from "../../functions/fetchUsers";
 
 const YourGroups = () => {
   const [groups, setGroups] = useState([]);
@@ -61,7 +61,7 @@ const YourGroups = () => {
         )
       );
       const groups = await getDocs(q);
-      const userData = await getUserData("groups");
+      const userData = await getUserdata("groups");
       let yourGroups = [
         {
           name: "Privat",
@@ -78,7 +78,6 @@ const YourGroups = () => {
       ];
 
       groups.forEach((group) => {
-        console.log(group.id);
         if (userData.groups.includes(group.id)) {
           let groupData = group.data();
           yourGroups.push({
@@ -90,7 +89,6 @@ const YourGroups = () => {
         }
       });
       setGroups(yourGroups);
-      console.log(yourGroups);
 
       setLoaded(true);
     }

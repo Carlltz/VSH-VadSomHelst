@@ -29,7 +29,7 @@ import {
 import { auth, db } from "../../firebase";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import { useNavigation } from "@react-navigation/native";
-import getUserData from "../../functions/getUserData";
+import { getUserdata } from "../../functions/fetchUsers";
 
 const ChangeGroup = () => {
   const [loaded, setLoaded] = useState(false);
@@ -90,11 +90,10 @@ const ChangeGroup = () => {
         setGroups(usersGroups);
         setLoaded(true);
       }
-      //console.log(usersGroups);
     }
 
     async function getDATA() {
-      userData = await getUserData();
+      userData = await getUserdata();
       groupsData = userData.groups;
 
       if (groupsData.includes("Privat")) {

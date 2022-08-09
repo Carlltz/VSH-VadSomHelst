@@ -25,7 +25,6 @@ import {
 } from "@expo/vector-icons";
 
 const Card = ({ item }) => {
-  console.log(item.saved);
   const [bookmarkIcon, setBookmarkIcon] = useState(
     item.saved ? "bookmark" : "bookmark-o"
   );

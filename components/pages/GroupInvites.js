@@ -38,8 +38,10 @@ import {
   arrayRemove,
 } from "firebase/firestore";
 import { auth, db } from "../../firebase";
-import getUserData from "../../functions/getUserData";
-import putUserData from "../../functions/putUserData";
+import {
+  getUserdata,
+  putUserdata,
+} from "../../functions/fetchUsers";
 
 const GroupInvites = () => {
   const [groups, setGroups] = useState([]);
@@ -60,7 +62,7 @@ const GroupInvites = () => {
         )
       );
       const groups = await getDocs(q);
-      const userData = await getUserData("groups");
+      const userData = await getUserdata("groups");
       let invitedGroups = [];
 
       groups.forEach((group) => {
@@ -102,7 +104,7 @@ const GroupInvites = () => {
     await updateDoc(doc(db, "groups", group.id), {
       [`usernames.${auth.currentUser.uid}.isMember`]: true,
     });
-    await putUserData({ groups: arrayUnion(group.id) });
+    await putUserdata({ groups: arrayUnion(group.id) });
   }
 
   async function declineGroup(group) {

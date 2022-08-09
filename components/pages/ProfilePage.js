@@ -38,8 +38,10 @@ import {
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import Person from "../Person";
 import { useNavigation } from "@react-navigation/native";
-import getUserData from "../../functions/getUserData";
-import putUserData from "../../functions/putUserData";
+import {
+  getUserdata,
+  putUserdata,
+} from "../../functions/fetchUsers";
 
 const ProfilePage = () => {
   const navigation = useNavigation();
@@ -60,7 +62,6 @@ const ProfilePage = () => {
   const [searchResult, setSearchResult] = useState([]);
 
   useEffect(() => {
-    console.log(groupMembers);
     if (groupMembers.length === 0) setCreatingGroup(false);
     else setCreatingGroup(true);
   }, [reloadFlatList]);
@@ -70,7 +71,7 @@ const ProfilePage = () => {
     let isMounted = true;
 
     async function getDATA() {
-      const userData = await getUserData(
+      const userData = await getUserdata(
         "liked&disliked&friends"
       );
 
@@ -386,12 +387,11 @@ const ProfilePage = () => {
             name: createGroupName,
             usernames: usernames,
           };
-          console.log(finishedObject);
           const created = await addDoc(
             collection(db, "groups"),
             finishedObject
           );
-          await putUserData({ groups: arrayUnion(created.id) });
+          await putUserdata({ groups: arrayUnion(created.id) });
           setCreatingGroup(false);
           setGroupMembers([]);
           setCreateGroupName("");

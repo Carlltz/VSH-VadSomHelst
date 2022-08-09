@@ -33,9 +33,11 @@ import {
   useNavigation,
   useIsFocused,
 } from "@react-navigation/native";
-import getRecipes from "../../functions/getRecipes";
-import getUserData from "../../functions/getUserData";
-import putUserData from "../../functions/putUserData";
+import { getRecipes } from "../../functions/fetchRecipes";
+import {
+  getUserdata,
+  putUserdata,
+} from "../../functions/fetchUsers";
 
 //https://github.com/alexbrillant/react-native-deck-swiper
 //https://www.npmjs.com/package/@ilterugur/react-native-deck-swiper-renewed
@@ -130,7 +132,7 @@ const SwipePage = ({ setParentPage }) => {
   }, [savedText]);
 
   async function updateLiked(val) {
-    await putUserData({ liked: val });
+    await putUserdata({ liked: val });
 
     /* if (currentGroupId === auth.currentUser.uid) {
       await updateDoc(doc(db, "users", auth.currentUser.uid), { liked: arrayUnion(val) });
@@ -140,7 +142,7 @@ const SwipePage = ({ setParentPage }) => {
   }
 
   async function updateDisliked(val) {
-    await putUserData({ disliked: val });
+    await putUserdata({ disliked: val });
 
     /* if (currentGroupId === auth.currentUser.uid) {
       await updateDoc(doc(db, "users", auth.currentUser.uid), { disliked: arrayUnion(val) });
@@ -216,7 +218,7 @@ const SwipePage = ({ setParentPage }) => {
         let recipes = [];
         let swiped = [];
 
-        const userData = await getUserData(
+        const userData = await getUserdata(
           "saved&liked&disliked&groups"
         );
 

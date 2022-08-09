@@ -31,7 +31,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { auth, db } from "../../firebase";
-import getUserData from "../../functions/getUserData";
+import { getUserdata } from "../../functions/fetchUsers";
 
 const DATA = [
   {
@@ -154,7 +154,7 @@ const TogheterLikedPage = () => {
       });
       //setRecipesSnaps(recipes);
 
-      const userData = await getUserData("liked");
+      const userData = await getUserdata("liked");
       //setLiked(userData.liked);
 
       let like = [];

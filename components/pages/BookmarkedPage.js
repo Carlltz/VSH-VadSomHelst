@@ -22,17 +22,8 @@ import {
   FontAwesome,
 } from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
-import {
-  collection,
-  doc,
-  getDoc,
-  addDoc,
-  getDocs,
-  setDoc,
-} from "firebase/firestore";
-import { auth, db } from "../../firebase";
-import getUserData from "../../functions/getUserData";
-import getRecipes from "../../functions/getRecipes";
+import { getUserdata } from "../../functions/fetchUsers";
+import { getRecipes } from "../../functions/fetchRecipes";
 
 const DATA = [
   {
@@ -148,7 +139,7 @@ const BookmarkedPage = () => {
       recipes = await getRecipes();
       //setRecipesSnaps(recipes);
 
-      const userData = await getUserData("saved");
+      const userData = await getUserdata("saved");
 
       let saved = [];
       recipes.forEach((rec) => {

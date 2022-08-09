@@ -10,11 +10,29 @@ import {
   ActivityIndicator,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { lime, lemon, teal, mint, navy } from "../../styles/colors";
-import { MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
+import {
+  lime,
+  lemon,
+  teal,
+  mint,
+  navy,
+} from "../../styles/colors";
+import {
+  MaterialCommunityIcons,
+  FontAwesome,
+} from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
-import { collection, doc, getDoc, addDoc, getDocs, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  addDoc,
+  getDocs,
+  setDoc,
+} from "firebase/firestore";
 import { auth, db } from "../../firebase";
+import getUserData from "../../functions/getUserData";
+import getRecipes from "../../functions/getRecipes";
 
 const DATA = [
   {
@@ -113,9 +131,9 @@ const BookmarkedPage = () => {
     switch (val) {
       case 0:
         return "star-o";
-      case 1:
+      case 2:
         return "star";
-      case 0.5:
+      case 1:
         return "star-half-empty";
     }
   }
@@ -127,21 +145,14 @@ const BookmarkedPage = () => {
     let isMounted = true;
 
     async function getDATA() {
-      const recipesSnap = await getDocs(collection(db, "recipes"));
-      recipesSnap.forEach((doc) => {
-        const data = doc.data();
-        data.id = doc.id;
-        recipes.push(data);
-      });
+      recipes = await getRecipes();
       //setRecipesSnaps(recipes);
 
-      const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
-      const userData = userSnap.data();
-      //setLiked(userData.liked);
+      const userData = await getUserData("saved");
 
       let saved = [];
       recipes.forEach((rec) => {
-        if (userData.saved.includes(rec.id)) {
+        if (userData.saved.includes(rec._id)) {
           saved.push(rec);
         }
       });
@@ -172,8 +183,14 @@ const BookmarkedPage = () => {
     return (
       <TouchableOpacity
         onPress={() => Linking.openURL(item.url)}
-        style={[styles.card, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
-        <Image style={[styles.cardImage]} source={{ uri: item.image }} />
+        style={[
+          styles.card,
+          generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8),
+        ]}>
+        <Image
+          style={[styles.cardImage]}
+          source={{ uri: item.image }}
+        />
         <View
           style={{
             width: "100%",
@@ -182,13 +199,36 @@ const BookmarkedPage = () => {
             justifyContent: "center",
             marginHorizontal: 5,
           }}>
-          <Text style={{ fontSize: 18, textAlign: "center" }}>{item.name}</Text>
-          <View style={{ flexDirection: "row", marginBottom: 2 }}>
-            <FontAwesome name={getStar(item.stars[0])} size={24} color="black" />
-            <FontAwesome name={getStar(item.stars[1])} size={24} color="black" />
-            <FontAwesome name={getStar(item.stars[2])} size={24} color="black" />
-            <FontAwesome name={getStar(item.stars[3])} size={24} color="black" />
-            <FontAwesome name={getStar(item.stars[4])} size={24} color="black" />
+          <Text style={{ fontSize: 18, textAlign: "center" }}>
+            {item.name}
+          </Text>
+          <View
+            style={{ flexDirection: "row", marginBottom: 2 }}>
+            <FontAwesome
+              name={getStar(item.stars[0])}
+              size={24}
+              color="black"
+            />
+            <FontAwesome
+              name={getStar(item.stars[1])}
+              size={24}
+              color="black"
+            />
+            <FontAwesome
+              name={getStar(item.stars[2])}
+              size={24}
+              color="black"
+            />
+            <FontAwesome
+              name={getStar(item.stars[3])}
+              size={24}
+              color="black"
+            />
+            <FontAwesome
+              name={getStar(item.stars[4])}
+              size={24}
+              color="black"
+            />
           </View>
           <View
             style={{
@@ -198,13 +238,26 @@ const BookmarkedPage = () => {
               justifyContent: "space-evenly",
             }}>
             <View style={{ alignItems: "center" }}>
-              <MaterialCommunityIcons name="clock-time-five-outline" size={20} color={navy} />
-              <Text style={{ fontSize: 16, fontWeight: "500" }}>{item.time}</Text>
+              <MaterialCommunityIcons
+                name="clock-time-five-outline"
+                size={20}
+                color={navy}
+              />
+              <Text style={{ fontSize: 16, fontWeight: "500" }}>
+                {item.time}
+              </Text>
             </View>
             <View style={{ alignItems: "center" }}>
-              <MaterialCommunityIcons name="food-takeout-box-outline" size={20} color={navy} />
+              <MaterialCommunityIcons
+                name="food-takeout-box-outline"
+                size={20}
+                color={navy}
+              />
               <Text style={{ fontSize: 16, fontWeight: "500" }}>
-                {item.ingredientAmount} {item.ingredientAmount == 1 ? "Ingrediens" : "Ingredienser"}
+                {item.ingredientAmount}{" "}
+                {item.ingredientAmount == 1
+                  ? "Ingrediens"
+                  : "Ingredienser"}
               </Text>
             </View>
           </View>
@@ -217,17 +270,26 @@ const BookmarkedPage = () => {
     return (
       <View style={styles.container}>
         <FlatList
-          contentContainerStyle={{ paddingBottom: 8, paddingTop: 0 }}
+          contentContainerStyle={{
+            paddingBottom: 8,
+            paddingTop: 0,
+          }}
           style={styles.flatList}
           data={savedData}
           renderItem={renderCard}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id}
         />
       </View>
     );
   } else {
     return (
-      <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <View
+        style={{
+          width: "100%",
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+        }}>
         <ActivityIndicator size="large" />
       </View>
     );

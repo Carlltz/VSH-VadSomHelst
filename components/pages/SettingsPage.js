@@ -1,11 +1,29 @@
-import { StyleSheet, Text, TouchableOpacity, View, Dimensions, Modal, Button, Animated, Easing } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Dimensions,
+  Modal,
+  Button,
+  Animated,
+  Easing,
+} from "react-native";
 import React, { useEffect, useState, useRef } from "react";
 import { signOut } from "firebase/auth";
-import { lime, lemon, teal, mint, navy } from "../../styles/colors";
+import {
+  lime,
+  lemon,
+  teal,
+  mint,
+  navy,
+} from "../../styles/colors";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import { useNavigation } from "@react-navigation/native";
 import { auth, db } from "../../firebase";
 import { doc, setDoc } from "firebase/firestore";
+import deleteAllUserData from "../../functions/deleteAllUserData";
+import * as SecureStore from "expo-secure-store";
 
 const SettingsPage = () => {
   const [logOutPopup, setLogOutPopup] = useState(false);
@@ -30,57 +48,133 @@ const SettingsPage = () => {
 
   async function resetLiked() {
     showPop();
-    await setDoc(doc(db, "users", auth.currentUser.uid), { liked: [] }, { merge: true });
+    await deleteAllUserData("liked");
   }
 
   async function resetDisliked() {
     showPop();
-    await setDoc(doc(db, "users", auth.currentUser.uid), { disliked: [] }, { merge: true });
+    await deleteAllUserData("disliked");
   }
 
   const navigation = useNavigation();
 
-  const logOut = () => {
-    signOut(auth)
-      .then(() => {
-        navigation.replace("SignInScreen");
-      })
-      .catch((error) => alert(error.message));
+  const logOut = async () => {
+    await SecureStore.deleteItemAsync("token");
+    navigation.replace("SignInScreen");
   };
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.reset, { backgroundColor: teal, marginTop: 10 }]}
+        style={[
+          styles.reset,
+          { backgroundColor: teal, marginTop: 10 },
+        ]}
         onPress={() => {
           navigation.push("Disliked");
         }}>
-        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Ogillade recept</Text>
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: "600",
+            textAlign: "center",
+            color: navy,
+          }}>
+          Ogillade recept
+        </Text>
       </TouchableOpacity>
-      <TouchableOpacity style={[styles.reset, { marginTop: "auto" }]} onPress={() => resetDisliked()}>
-        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Återställ ogillade</Text>
+      <TouchableOpacity
+        style={[styles.reset, { marginTop: "auto" }]}
+        onPress={() => resetDisliked()}>
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: "600",
+            textAlign: "center",
+            color: navy,
+          }}>
+          Återställ ogillade
+        </Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.reset} onPress={() => resetLiked()}>
-        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Återställ gillade</Text>
+      <TouchableOpacity
+        style={styles.reset}
+        onPress={() => resetLiked()}>
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: "600",
+            textAlign: "center",
+            color: navy,
+          }}>
+          Återställ gillade
+        </Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.loggaUt} onPress={() => setLogOutPopup(true)}>
-        <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center", color: navy }}>Logga ut</Text>
+      <TouchableOpacity
+        style={styles.loggaUt}
+        onPress={() => setLogOutPopup(true)}>
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: "600",
+            textAlign: "center",
+            color: navy,
+          }}>
+          Logga ut
+        </Text>
       </TouchableOpacity>
-      <Animated.View pointerEvents="none" style={[styles.pop, { opacity: smallPop }]}>
-        <Text style={{ color: "white", fontSize: 17 }}>Reseting...</Text>
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.pop, { opacity: smallPop }]}>
+        <Text style={{ color: "white", fontSize: 17 }}>
+          Reseting...
+        </Text>
       </Animated.View>
 
-      <Modal animationType="fade" transparent={true} visible={logOutPopup}>
-        <View style={[styles.modalPopup, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
-          <Text style={{ textAlign: "center", fontSize: 20, fontWeight: "600", marginVertical: 15, color: navy }}>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={logOutPopup}>
+        <View
+          style={[
+            styles.modalPopup,
+            generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8),
+          ]}>
+          <Text
+            style={{
+              textAlign: "center",
+              fontSize: 20,
+              fontWeight: "600",
+              marginVertical: 15,
+              color: navy,
+            }}>
             Logga ut?
           </Text>
           <View style={styles.options}>
-            <TouchableOpacity style={[styles.option, { borderRightWidth: 0.8 }]} onPress={() => setLogOutPopup(false)}>
-              <Text style={{ fontSize: 22, fontWeight: "600", textAlign: "center", color: navy }}>Avbryt</Text>
+            <TouchableOpacity
+              style={[styles.option, { borderRightWidth: 0.8 }]}
+              onPress={() => setLogOutPopup(false)}>
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: "600",
+                  textAlign: "center",
+                  color: navy,
+                }}>
+                Avbryt
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.option, { borderLeftWidth: 0.8 }]} onPress={logOut}>
-              <Text style={{ fontSize: 22, fontWeight: "600", textAlign: "center", color: "#DB2432" }}>Logga ut</Text>
+            <TouchableOpacity
+              style={[styles.option, { borderLeftWidth: 0.8 }]}
+              onPress={logOut}>
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: "600",
+                  textAlign: "center",
+                  color: "#DB2432",
+                }}>
+                Logga ut
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

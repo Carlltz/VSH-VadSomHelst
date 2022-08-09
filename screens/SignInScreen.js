@@ -1,7 +1,14 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
 import React, { useState, useEffect } from "react";
 import { lime, lemon, teal, mint, navy } from "../styles/colors";
 import { LinearGradient } from "expo-linear-gradient";
+import * as SecureStore from "expo-secure-store";
 
 import { auth, db } from "../firebase";
 import {
@@ -10,7 +17,17 @@ import {
   onAuthStateChanged,
   updateProfile,
 } from "firebase/auth";
-import { getDocs, setDoc, collection, query, where, doc, updateDoc, arrayUnion } from "firebase/firestore";
+import {
+  getDocs,
+  setDoc,
+  collection,
+  query,
+  where,
+  doc,
+  updateDoc,
+  arrayUnion,
+} from "firebase/firestore";
+import getToken from "../functions/getToken";
 
 const SignInScreen = ({ navigation }) => {
   const [dispName, setdispName] = useState("");
@@ -18,30 +35,46 @@ const SignInScreen = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [repPassword, setRepPassword] = useState("");
   const [register, setRegister] = useState(false);
+  const [token, setToken] = useState("");
+
+  async function saveToken(value) {
+    await SecureStore.setItemAsync("token", value);
+  }
 
   useEffect(() => {
-    const userChanged = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        if (user.displayName) {
-          navigation.replace("HomeScreen");
-        }
+    async function checkToken() {
+      if (await getToken()) {
+        navigation.replace("HomeScreen");
       }
-    });
-    return userChanged;
+    }
+    checkToken();
   }, []);
 
-  const logIn = () => {
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredetials) => {})
-      .catch((error) => {
-        if (error.code === "auth/invalid-email") {
-          alert("Ogitlig mail-adress");
-        } else if (error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
-          alert("Felaktig mail eller lösenord");
-        } else {
-          alert(error.message);
-        }
-      });
+  const logIn = async () => {
+    const body = { email, password };
+    console.log(body);
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    };
+    try {
+      const result = await fetch(
+        "http://192.168.68.138:3000/api/auth",
+        requestOptions
+      );
+      if (result.status === 200) {
+        saveToken(await result.text());
+        navigation.replace("HomeScreen");
+      } else {
+        console.log(result.status);
+        console.log(await result.text());
+      }
+    } catch (error) {
+      console.log("error", error);
+    }
   };
 
   const updateUser = async () => {
@@ -71,7 +104,10 @@ const SignInScreen = ({ navigation }) => {
   const singUp = async () => {
     if (password == repPassword && dispName != "") {
       let taken = false;
-      const q = query(collection(db, "usernamesTaken"), where("usernamesTaken", "array-contains-any", [dispName]));
+      const q = query(
+        collection(db, "usernamesTaken"),
+        where("usernamesTaken", "array-contains-any", [dispName])
+      );
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
         if (doc.id == "taken") {
@@ -81,11 +117,15 @@ const SignInScreen = ({ navigation }) => {
       if (!taken) {
         createUserWithEmailAndPassword(auth, email, password)
           .then((userCredetials) => {
-            updateUser().then(() => navigation.replace("HomeScreen"));
+            updateUser().then(() =>
+              navigation.replace("HomeScreen")
+            );
           })
           .catch((error) => {
             if (error.code == "auth/email-already-in-use") {
-              alert("Denna mail-adress är redan registrerad, testa att logga in istället");
+              alert(
+                "Denna mail-adress är redan registrerad, testa att logga in istället"
+              );
             } else if (error.code == "auth/weak-password") {
               alert("Lösenordet måste innehåll minst 6 tecken");
             } else {
@@ -93,7 +133,9 @@ const SignInScreen = ({ navigation }) => {
             }
           });
       } else {
-        alert("Användarnamnet är upptaget, var vänligen välj ett annat istället.");
+        alert(
+          "Användarnamnet är upptaget, var vänligen välj ett annat istället."
+        );
       }
     } else if (dispName === "") {
       alert("Ogiltigt användarnamn");
@@ -116,9 +158,21 @@ const SignInScreen = ({ navigation }) => {
             y: 0.9,
           }}
           style={styles.registerSquare}>
-          <Text style={{ fontSize: 28, fontWeight: "bold", color: navy }}>VadSomHelst</Text>
+          <Text
+            style={{
+              fontSize: 28,
+              fontWeight: "bold",
+              color: navy,
+            }}>
+            VadSomHelst
+          </Text>
           <View style={styles.inputTexts}>
-            <TextInput placeholder="Användarnamn:" value={dispName} onChangeText={setdispName} style={styles.input} />
+            <TextInput
+              placeholder="Användarnamn:"
+              value={dispName}
+              onChangeText={setdispName}
+              style={styles.input}
+            />
             <TextInput
               placeholder="Mail-adress:"
               value={email}
@@ -142,11 +196,17 @@ const SignInScreen = ({ navigation }) => {
             />
           </View>
           <View style={styles.inputButtons}>
-            <TouchableOpacity onPress={singUp} style={styles.button}>
+            <TouchableOpacity
+              onPress={singUp}
+              style={styles.button}>
               <Text style={styles.buttonText}>Register</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setRegister(false)} style={[styles.button, styles.buttonOutline]}>
-              <Text style={styles.buttonOutlineText}>Login insted</Text>
+            <TouchableOpacity
+              onPress={() => setRegister(false)}
+              style={[styles.button, styles.buttonOutline]}>
+              <Text style={styles.buttonOutlineText}>
+                Login insted
+              </Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -166,7 +226,14 @@ const SignInScreen = ({ navigation }) => {
             y: 1,
           }}
           style={styles.signSquare}>
-          <Text style={{ fontSize: 28, fontWeight: "bold", color: navy }}>VadSomHelst</Text>
+          <Text
+            style={{
+              fontSize: 28,
+              fontWeight: "bold",
+              color: navy,
+            }}>
+            VadSomHelst
+          </Text>
           <View style={styles.inputTexts}>
             <TextInput
               placeholder="Mail-adress:"
@@ -184,11 +251,17 @@ const SignInScreen = ({ navigation }) => {
             />
           </View>
           <View style={styles.inputButtons}>
-            <TouchableOpacity onPress={logIn} style={styles.button}>
+            <TouchableOpacity
+              onPress={logIn}
+              style={styles.button}>
               <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setRegister(true)} style={[styles.button, styles.buttonOutline]}>
-              <Text style={styles.buttonOutlineText}>Register</Text>
+            <TouchableOpacity
+              onPress={() => setRegister(true)}
+              style={[styles.button, styles.buttonOutline]}>
+              <Text style={styles.buttonOutlineText}>
+                Register
+              </Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>

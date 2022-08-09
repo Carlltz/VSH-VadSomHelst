@@ -13,13 +13,28 @@ import {
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 import { lime, lemon, teal, mint, navy } from "../styles/colors";
-import { MaterialCommunityIcons, FontAwesome, Ionicons, Entypo, AntDesign } from "@expo/vector-icons";
+import {
+  MaterialCommunityIcons,
+  FontAwesome,
+  Ionicons,
+  Entypo,
+  AntDesign,
+} from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../styles/generateShadow";
+import { db, auth } from "../firebase";
+import {
+  doc,
+  updateDoc,
+  deleteField,
+  arrayRemove,
+} from "firebase/firestore";
 
-const AnimatedAntDesign = Animated.createAnimatedComponent(AntDesign);
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
+const AnimatedAntDesign =
+  Animated.createAnimatedComponent(AntDesign);
+const AnimatedFlatList =
+  Animated.createAnimatedComponent(FlatList);
 
-const RenderYourGroups = ({ item }) => {
+const RenderYourGroups = ({ item, removeGroup }) => {
   const [moreInfo, setMoreInfo] = useState(false);
   const rotateCaret = useRef(new Animated.Value(0)).current;
 
@@ -32,7 +47,39 @@ const RenderYourGroups = ({ item }) => {
     }).start();
   }, [moreInfo]);
 
-  const renderMembers = (item) => {
+  async function leaveGroup() {
+    const requestOptions = {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "VSH-auth-token":
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MmYwMjJjYWExYzI2YWI0ODY2MGY2MzEiLCJpYXQiOjE2NTk5MDQ3MTh9.oYgA4ljVojBQ4O2TV5hFX6guKLEpWfzUTeneOvhS-B0",
+      },
+      body: JSON.stringify({
+        groups: item._id,
+      }),
+    };
+    try {
+      const result = await fetch(
+        "http://192.168.68.138:3000/api/users/me",
+        requestOptions
+      );
+    } catch (error) {
+      console.log("error", error);
+    }
+    await updateDoc(doc(db, "groups", item.id), {
+      [`usernames.${auth.currentUser.uid}`]: deleteField(),
+    });
+    await updateDoc(doc(db, "groups", item.id), {
+      [auth.currentUser.uid]: deleteField(),
+    });
+    removeGroup(item);
+  }
+
+  const renderMembers = ({ item }) => {
+    const isMember = item.isMember
+      ? "account-check"
+      : "arrow-left-bold-box";
     return (
       <View
         style={{
@@ -41,11 +88,24 @@ const RenderYourGroups = ({ item }) => {
           backgroundColor: lime,
           borderRadius: 8,
           alignItems: "center",
+          justifyContent: "space-between",
           marginTop: 6,
+          flexDirection: "row",
+          paddingHorizontal: 10,
         }}>
         <Text numberOfLines={1} style={{ flexShrink: 1 }}>
-          {item.item}
+          {item.memberName}
         </Text>
+        <MaterialCommunityIcons
+          name={isMember}
+          size={21}
+          color="black"
+          style={{
+            transform: [
+              { rotate: item.isMember ? "0deg" : "180deg" },
+            ],
+          }}
+        />
       </View>
     );
   };
@@ -61,7 +121,7 @@ const RenderYourGroups = ({ item }) => {
             alignSelf: "stretch",
             height: "100%",
           }}
-          data={item.members}
+          data={Object.values(item.members)}
           renderItem={renderMembers}
         />
       );
@@ -72,6 +132,11 @@ const RenderYourGroups = ({ item }) => {
 
   const ButtonsOrNot = () => {
     if (moreInfo) {
+      if (item.name === "Privat") {
+        return (
+          <View style={{ padding: 10, height: "100%" }}></View>
+        );
+      }
       return (
         <View style={{ padding: 10, height: "100%" }}>
           <TouchableOpacity
@@ -81,8 +146,11 @@ const RenderYourGroups = ({ item }) => {
               alignItems: "center",
               borderRadius: 10,
               marginTop: "auto",
-            }}>
-            <Text style={{ fontSize: 16, fontWeight: "500" }}>Lämna</Text>
+            }}
+            onPress={() => leaveGroup()}>
+            <Text style={{ fontSize: 16, fontWeight: "500" }}>
+              Lämna
+            </Text>
           </TouchableOpacity>
         </View>
       );
@@ -93,7 +161,9 @@ const RenderYourGroups = ({ item }) => {
 
   return (
     <View style={{ alignItems: "center" }}>
-      <TouchableOpacity style={[local.container]} onPress={() => setMoreInfo((val) => !val)}>
+      <TouchableOpacity
+        style={[local.container]}
+        onPress={() => setMoreInfo((val) => !val)}>
         <View
           style={{
             flex: 1,
@@ -102,12 +172,19 @@ const RenderYourGroups = ({ item }) => {
             justifyContent: "space-evenly",
             flexDirection: "row",
           }}>
-          <Text numberOfLines={1} style={[local.name, { marginRight: 6 }]}>
+          <Text
+            numberOfLines={1}
+            style={[local.name, { marginRight: 6 }]}>
             {item.name}
           </Text>
         </View>
         <View style={{ flexDirection: "row" }}>
-          <Text numberOfLines={1} style={[local.name, { marginLeft: 6, marginRight: 8 }]}>
+          <Text
+            numberOfLines={1}
+            style={[
+              local.name,
+              { marginLeft: 6, marginRight: 8 },
+            ]}>
             {item.numMem} St
           </Text>
           <AnimatedAntDesign

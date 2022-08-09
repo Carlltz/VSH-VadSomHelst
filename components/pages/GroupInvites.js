@@ -10,8 +10,19 @@ import {
   Dimensions,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { lime, lemon, teal, mint, navy } from "../../styles/colors";
-import { MaterialCommunityIcons, FontAwesome, Ionicons, Entypo } from "@expo/vector-icons";
+import {
+  lime,
+  lemon,
+  teal,
+  mint,
+  navy,
+} from "../../styles/colors";
+import {
+  MaterialCommunityIcons,
+  FontAwesome,
+  Ionicons,
+  Entypo,
+} from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import {
   collection,
@@ -27,6 +38,8 @@ import {
   arrayRemove,
 } from "firebase/firestore";
 import { auth, db } from "../../firebase";
+import getUserData from "../../functions/getUserData";
+import putUserData from "../../functions/putUserData";
 
 const GroupInvites = () => {
   const [groups, setGroups] = useState([]);
@@ -38,17 +51,26 @@ const GroupInvites = () => {
     let isMounted = true;
 
     async function getDATA() {
-      const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
-      const q = query(collection(db, "groups"), where("users", "array-contains", auth.currentUser.uid));
+      const q = query(
+        collection(db, "groups"),
+        where(
+          `usernames.${auth.currentUser.uid}.memberId`,
+          "==",
+          auth.currentUser.uid
+        )
+      );
       const groups = await getDocs(q);
-      const userData = userSnap.data();
+      const userData = await getUserData("groups");
       let invitedGroups = [];
 
       groups.forEach((group) => {
         const groupData = group.data();
-        if (groupData.users.includes(auth.currentUser.uid) && !userData.groups.includes(group.id)) {
-          console.log(groupData.users.length);
-          invitedGroups.push({ name: groupData.name, id: group.id, numMem: groupData.users.length });
+        if (!userData.groups.includes(group.id)) {
+          invitedGroups.push({
+            name: groupData.name,
+            id: group.id,
+            numMem: Object.keys(groupData.usernames).length,
+          });
         }
       });
       setGroups(invitedGroups);
@@ -72,10 +94,15 @@ const GroupInvites = () => {
       return prev;
     });
     setReloadFlatList((val) => !val);
-    await setDoc(doc(db, "groups", group.id), { [auth.currentUser.uid]: { disliked: [], liked: [] } }, { merge: true });
-    await updateDoc(doc(db, "users", auth.currentUser.uid), {
-      groups: arrayUnion(group.id),
+    await setDoc(
+      doc(db, "groups", group.id),
+      { [auth.currentUser.uid]: { disliked: [], liked: [] } },
+      { merge: true }
+    );
+    await updateDoc(doc(db, "groups", group.id), {
+      [`usernames.${auth.currentUser.uid}.isMember`]: true,
     });
+    await putUserData({ groups: arrayUnion(group.id) });
   }
 
   async function declineGroup(group) {
@@ -84,7 +111,9 @@ const GroupInvites = () => {
       return prev;
     });
     setReloadFlatList((val) => !val);
-    await updateDoc(doc(db, "groups", group.id), { users: arrayRemove(group.id) });
+    await updateDoc(doc(db, "groups", group.id), {
+      userIds: arrayRemove(group.id),
+    });
   }
 
   const renderGroups = ({ item }) => {
@@ -109,8 +138,15 @@ const GroupInvites = () => {
     });
     return (
       <View style={local.container}>
-        <TouchableOpacity style={{ paddingHorizontal: 13, paddingVertical: 10 }} onPress={() => declineGroup(item)}>
-          <Entypo name="minus" size={30} color="black" style={{}} />
+        <TouchableOpacity
+          style={{ paddingHorizontal: 13, paddingVertical: 10 }}
+          onPress={() => declineGroup(item)}>
+          <Entypo
+            name="minus"
+            size={30}
+            color="black"
+            style={{}}
+          />
         </TouchableOpacity>
         <TouchableOpacity
           style={{
@@ -120,15 +156,26 @@ const GroupInvites = () => {
             justifyContent: "space-evenly",
             flexDirection: "row",
           }}>
-          <Text numberOfLines={1} style={[local.name, { marginRight: 6 }]}>
+          <Text
+            numberOfLines={1}
+            style={[local.name, { marginRight: 6 }]}>
             {item.name}
           </Text>
-          <Text numberOfLines={1} style={[local.name, { marginLeft: 6 }]}>
+          <Text
+            numberOfLines={1}
+            style={[local.name, { marginLeft: 6 }]}>
             {item.numMem} St
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={{ paddingHorizontal: 13, paddingVertical: 10 }} onPress={() => acceptGroup(item)}>
-          <Entypo name="plus" size={30} color="black" style={{}} />
+        <TouchableOpacity
+          style={{ paddingHorizontal: 13, paddingVertical: 10 }}
+          onPress={() => acceptGroup(item)}>
+          <Entypo
+            name="plus"
+            size={30}
+            color="black"
+            style={{}}
+          />
         </TouchableOpacity>
       </View>
     );
@@ -139,7 +186,10 @@ const GroupInvites = () => {
       return (
         <View style={styles.container}>
           <FlatList
-            contentContainerStyle={{ paddingBottom: 10, paddingTop: 0 }}
+            contentContainerStyle={{
+              paddingBottom: 10,
+              paddingTop: 0,
+            }}
             style={{ alignSelf: "stretch", flex: 1 }}
             data={groups}
             renderItem={renderGroups}
@@ -150,8 +200,17 @@ const GroupInvites = () => {
       );
     } else {
       return (
-        <View style={[styles.container, { justifyContent: "center" }]}>
-          <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center" }}>
+        <View
+          style={[
+            styles.container,
+            { justifyContent: "center" },
+          ]}>
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "600",
+              textAlign: "center",
+            }}>
             Du har inga obesvarade inbjudningar!
           </Text>
         </View>
@@ -167,7 +226,14 @@ const GroupInvites = () => {
     );
   } else {
     return (
-      <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: lime }}>
+      <View
+        style={{
+          width: "100%",
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: lime,
+        }}>
         <ActivityIndicator size="large" />
       </View>
     );

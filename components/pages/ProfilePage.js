@@ -10,13 +10,36 @@ import {
   FlatList,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { lime, lemon, teal, mint, navy } from "../../styles/colors";
-import { collection, doc, getDoc, query, getDocs, where, addDoc } from "firebase/firestore";
+import {
+  lime,
+  lemon,
+  teal,
+  mint,
+  navy,
+} from "../../styles/colors";
+import {
+  collection,
+  doc,
+  getDoc,
+  query,
+  getDocs,
+  where,
+  addDoc,
+  updateDoc,
+  arrayUnion,
+} from "firebase/firestore";
 import { auth, db } from "../../firebase";
-import { FontAwesome, Entypo, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  FontAwesome,
+  Entypo,
+  MaterialIcons,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import Person from "../Person";
 import { useNavigation } from "@react-navigation/native";
+import getUserData from "../../functions/getUserData";
+import putUserData from "../../functions/putUserData";
 
 const ProfilePage = () => {
   const navigation = useNavigation();
@@ -47,10 +70,13 @@ const ProfilePage = () => {
     let isMounted = true;
 
     async function getDATA() {
-      const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
-      const userData = userSnap.data();
+      const userData = await getUserData(
+        "liked&disliked&friends"
+      );
 
-      setAmountSwiped(userData.liked.length + userData.disliked.length);
+      setAmountSwiped(
+        userData.liked.length + userData.disliked.length
+      );
       setAmountLiked(userData.liked.length);
       setAmountDisliked(userData.disliked.length);
 
@@ -72,8 +98,19 @@ const ProfilePage = () => {
   const search = async (key) => {
     setSearched(true);
 
-    const usernames = await getDoc(doc(db, "usernamesTaken", "taken"));
-    const matches = usernames.data().usernamesTaken.filter((username) => username.includes(key));
+    const usernames = await getDoc(
+      doc(db, "usernamesTaken", "taken")
+    );
+    const matches = usernames
+      .data()
+      .usernamesTaken.filter((username) =>
+        username.includes(key)
+      );
+    if (matches.includes(auth.currentUser.displayName))
+      matches.splice(
+        matches.indexOf(auth.currentUser.displayName),
+        1
+      );
     /* if (matches.includes(auth.currentUser.displayName))
       matches.splice(matches.indexOf(auth.currentUser.displayName), 1); */
     setSearchResult(matches);
@@ -92,7 +129,11 @@ const ProfilePage = () => {
       return (
         <View style={local.friends}>
           <FlatList
-            contentContainerStyle={{ paddingBottom: 15, paddingTop: 2, paddingHorizontal: 13 }}
+            contentContainerStyle={{
+              paddingBottom: 15,
+              paddingTop: 2,
+              paddingHorizontal: 13,
+            }}
             style={{ width: "100%", flex: 1 }}
             data={friends}
             renderItem={(item) => (
@@ -130,15 +171,27 @@ const ProfilePage = () => {
     } else {
       if (searchFinished) {
         return (
-          <View style={{ alignSelf: "stretch", flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <View
+            style={{
+              alignSelf: "stretch",
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
             <FlatList
-              contentContainerStyle={{ paddingBottom: 15, paddingTop: 2, paddingHorizontal: 13 }}
+              contentContainerStyle={{
+                paddingBottom: 15,
+                paddingTop: 2,
+                paddingHorizontal: 13,
+              }}
               style={{ width: "100%", flex: 1 }}
               data={searchResult}
               renderItem={(item) => (
                 <Person
                   name={item.item}
-                  friend={friends.includes(item.item) ? true : false}
+                  friend={
+                    friends.includes(item.item) ? true : false
+                  }
                   addFriend={(val) =>
                     setFriends((prev) => {
                       prev.push(val);
@@ -160,7 +213,13 @@ const ProfilePage = () => {
         );
       } else {
         return (
-          <View style={{ alignSelf: "stretch", flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <View
+            style={{
+              alignSelf: "stretch",
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
             <ActivityIndicator size="large" />
           </View>
         );
@@ -176,8 +235,10 @@ const ProfilePage = () => {
   }, [searchText]);
 
   const getRatio = () => {
-    if (isNaN(amountLiked / amountDisliked)) return (0.0).toFixed(2);
-    if (!Number.isFinite(amountLiked / amountDisliked)) return "Oändlig";
+    if (isNaN(amountLiked / amountDisliked))
+      return (0.0).toFixed(2);
+    if (!Number.isFinite(amountLiked / amountDisliked))
+      return "Oändlig";
     return (amountLiked / amountDisliked).toFixed(2);
   };
 
@@ -241,7 +302,10 @@ const ProfilePage = () => {
     item = item.item;
     return (
       <TouchableOpacity
-        style={[local.container, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+        style={[
+          local.container,
+          generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4),
+        ]}
         onPress={() => {
           setGroupMembers((prev) => {
             prev.splice(prev.indexOf(item), 1);
@@ -249,17 +313,27 @@ const ProfilePage = () => {
           });
           setReloadFlatList((val) => !val);
         }}>
-        <Text numberOfLines={1} style={{ fontSize: 16, flexShrink: 1 }}>
+        <Text
+          numberOfLines={1}
+          style={{ fontSize: 16, flexShrink: 1 }}>
           {item}
         </Text>
-        <Entypo name="minus" size={26} color="black" style={{ marginLeft: "auto" }} />
+        <Entypo
+          name="minus"
+          size={26}
+          color="black"
+          style={{ marginLeft: "auto" }}
+        />
       </TouchableOpacity>
     );
   };
 
   let memberIds = [];
   async function getMemeberIds(memberName) {
-    const q = query(collection(db, "usernames"), where("usrname", "in", [memberName]));
+    const q = query(
+      collection(db, "usernames"),
+      where("usrname", "in", [memberName])
+    );
     const querySnapshot = await getDocs(q);
     querySnapshot.forEach((val) => {
       memberIds.push(val.id);
@@ -275,17 +349,60 @@ const ProfilePage = () => {
       finishedMembers.forEach((member) => {
         finishedObject = { ...finishedObject, ...member };
       }); */
-      const finishedObject = {
-        ...{ [auth.currentUser.uid]: { disliked: [], liked: [] } },
-        name: createGroupName,
-        users: memberIds.concat(auth.currentUser.uid),
-      };
-      await addDoc(collection(db, "groups"), finishedObject);
+      let i;
+      memberIds.unshift(auth.currentUser.uid);
+      memberIds.forEach((memberId) => {
+        i = 0;
+        memberNames(memberId);
+      });
+
+      let usernames = {};
+
+      async function memberNames(memberId) {
+        let memberName = await getDoc(
+          doc(db, "usernames", memberId)
+        );
+        memberName = memberName.data().usrname;
+        usernames = {
+          ...usernames,
+          ...{
+            [memberId]: {
+              memberId: memberId,
+              memberName: memberName,
+              isMember:
+                memberId == auth.currentUser.uid ? true : false,
+            },
+          },
+        };
+        i++;
+        if (memberIds.length === i) {
+          const finishedObject = {
+            ...{
+              [auth.currentUser.uid]: {
+                disliked: [],
+                liked: [],
+              },
+            },
+            name: createGroupName,
+            usernames: usernames,
+          };
+          console.log(finishedObject);
+          const created = await addDoc(
+            collection(db, "groups"),
+            finishedObject
+          );
+          await putUserData({ groups: arrayUnion(created.id) });
+          setCreatingGroup(false);
+          setGroupMembers([]);
+          setCreateGroupName("");
+        }
+      }
     }
   }
 
   async function createGroup() {
-    if (createGroupName === "") alert("Vänligen ange ett gruppnamn först");
+    if (createGroupName === "")
+      alert("Vänligen ange ett gruppnamn först");
     else {
       groupMembers.forEach((name) => {
         getMemeberIds(name);
@@ -306,7 +423,11 @@ const ProfilePage = () => {
                 alignItems: "center",
               }}>
               <TouchableOpacity
-                style={{ position: "absolute", top: -6, left: -4 }}
+                style={{
+                  position: "absolute",
+                  top: -6,
+                  left: -4,
+                }}
                 onPress={() => {
                   setGroupMembers([]);
                   setCreateGroupName("");
@@ -314,7 +435,13 @@ const ProfilePage = () => {
                 }}>
                 <Entypo name="cross" size={34} color="black" />
               </TouchableOpacity>
-              <Text style={{ fontWeight: "500", fontSize: 20, marginLeft: "auto", marginRight: "auto" }}>
+              <Text
+                style={{
+                  fontWeight: "500",
+                  fontSize: 20,
+                  marginLeft: "auto",
+                  marginRight: "auto",
+                }}>
                 Ny Grupp:
               </Text>
             </View>
@@ -324,8 +451,18 @@ const ProfilePage = () => {
               onChangeText={setCreateGroupName}
               style={local.nameInput}
             />
-            <TouchableOpacity style={local.previousRecipes} onPress={() => setuploadRecipes((val) => !val)}>
-              <MaterialIcons name={uploadRecipes ? "check-box" : "check-box-outline-blank"} size={24} color="black" />
+            <TouchableOpacity
+              style={local.previousRecipes}
+              onPress={() => setuploadRecipes((val) => !val)}>
+              <MaterialIcons
+                name={
+                  uploadRecipes
+                    ? "check-box"
+                    : "check-box-outline-blank"
+                }
+                size={24}
+                color="black"
+              />
               <Text
                 style={{
                   fontWeight: "400",
@@ -337,7 +474,17 @@ const ProfilePage = () => {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[local.confirmBtn, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}
+              style={[
+                local.confirmBtn,
+                generateBoxShadowStyle(
+                  "#000",
+                  0,
+                  4,
+                  0.3,
+                  4.56,
+                  8
+                ),
+              ]}
               onPress={() => createGroup()}>
               <Text
                 style={{
@@ -348,9 +495,16 @@ const ProfilePage = () => {
               </Text>
             </TouchableOpacity>
           </View>
-          <View style={[local.groupView, { paddingVertical: 0, paddingHorizontal: 0 }]}>
+          <View
+            style={[
+              local.groupView,
+              { paddingVertical: 0, paddingHorizontal: 0 },
+            ]}>
             <FlatList
-              contentContainerStyle={{ paddingBottom: 6, paddingHorizontal: 8 }}
+              contentContainerStyle={{
+                paddingBottom: 6,
+                paddingHorizontal: 8,
+              }}
               style={local.flatList}
               data={groupMembers}
               extraData={reloadFlatList}
@@ -361,9 +515,19 @@ const ProfilePage = () => {
             />
           </View>
         </View>
-        <View style={[styles.friendsView, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
-          <View style={[styles.searchContainer, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
-            <Text style={{ fontWeight: "500", fontSize: 24 }}>Sök efter användare:</Text>
+        <View
+          style={[
+            styles.friendsView,
+            generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8),
+          ]}>
+          <View
+            style={[
+              styles.searchContainer,
+              generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8),
+            ]}>
+            <Text style={{ fontWeight: "500", fontSize: 24 }}>
+              Sök efter användare:
+            </Text>
             <View style={{ flexDirection: "row", marginTop: 2 }}>
               <View style={styles.inputIconCombo}>
                 <TextInput
@@ -373,17 +537,29 @@ const ProfilePage = () => {
                   style={styles.searchInput}
                 />
                 {searchText.length > 0 ? (
-                  <TouchableOpacity style={styles.crossStyle} onPress={() => setSearchText("")}>
-                    <Entypo name="cross" size={34} color="black" />
+                  <TouchableOpacity
+                    style={styles.crossStyle}
+                    onPress={() => setSearchText("")}>
+                    <Entypo
+                      name="cross"
+                      size={34}
+                      color="black"
+                    />
                   </TouchableOpacity>
                 ) : null}
               </View>
               <TouchableOpacity
                 style={styles.searchGlass}
                 onPress={() => {
-                  searchText.length > 0 ? search(searchText) : null;
+                  searchText.length > 0
+                    ? search(searchText)
+                    : null;
                 }}>
-                <FontAwesome name="search" size={30} color={navy} />
+                <FontAwesome
+                  name="search"
+                  size={30}
+                  color={navy}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -395,41 +571,111 @@ const ProfilePage = () => {
     return (
       <View style={styles.container}>
         <View style={styles.profileView}>
-          <Image style={styles.image} source={require("../../assets/profilePic.jpg")} />
+          <Image
+            style={styles.image}
+            source={require("../../assets/profilePic.jpg")}
+          />
           <View>
-            <Text style={{ fontWeight: "500", fontSize: 24 }}>{auth.currentUser.displayName}</Text>
-            <Text style={{ fontWeight: "400", fontSize: 16 }}>Swipes: {amountSwiped}</Text>
-            <Text style={{ fontWeight: "400", fontSize: 16 }}>Gillade: {amountLiked}</Text>
-            <Text style={{ fontWeight: "400", fontSize: 16 }}>Ogillade: {amountDisliked}</Text>
-            <Text style={{ fontWeight: "400", fontSize: 16 }}>Gillade/Ogillade: {getRatio()}</Text>
-            <Text style={{ fontWeight: "400", fontSize: 16 }}>Vänner: {friends.length}</Text>
+            <Text style={{ fontWeight: "500", fontSize: 24 }}>
+              {auth.currentUser.displayName}
+            </Text>
+            <Text style={{ fontWeight: "400", fontSize: 16 }}>
+              Swipes: {amountSwiped}
+            </Text>
+            <Text style={{ fontWeight: "400", fontSize: 16 }}>
+              Gillade: {amountLiked}
+            </Text>
+            <Text style={{ fontWeight: "400", fontSize: 16 }}>
+              Ogillade: {amountDisliked}
+            </Text>
+            <Text style={{ fontWeight: "400", fontSize: 16 }}>
+              Gillade/Ogillade: {getRatio()}
+            </Text>
+            <Text style={{ fontWeight: "400", fontSize: 16 }}>
+              Vänner: {friends.length}
+            </Text>
           </View>
         </View>
-        <View style={{ flexDirection: "row", alignSelf: "stretch", justifyContent: "space-evenly" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignSelf: "stretch",
+            justifyContent: "space-evenly",
+          }}>
           <TouchableOpacity
-            style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+            style={[
+              styles.groupContainer,
+              generateBoxShadowStyle(
+                "#000",
+                0,
+                2,
+                0.23,
+                2.62,
+                4
+              ),
+            ]}
             onPress={() => navigation.push("GroupInvites")}>
-            <MaterialCommunityIcons name="account-group-outline" size={30} color="black" />
+            <MaterialCommunityIcons
+              name="account-group-outline"
+              size={30}
+              color="black"
+            />
             <Text
               numberOfLines={2}
-              style={{ fontSize: 16, fontWeight: "500", textAlign: "center", marginLeft: 4, flexShrink: 1 }}>
+              style={{
+                fontSize: 16,
+                fontWeight: "500",
+                textAlign: "center",
+                marginLeft: 4,
+                flexShrink: 1,
+              }}>
               Grupp Inbjudningar
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+            style={[
+              styles.groupContainer,
+              generateBoxShadowStyle(
+                "#000",
+                0,
+                2,
+                0.23,
+                2.62,
+                4
+              ),
+            ]}
             onPress={() => navigation.push("YourGroups")}>
-            <MaterialCommunityIcons name="account-group" size={30} color="black" />
+            <MaterialCommunityIcons
+              name="account-group"
+              size={30}
+              color="black"
+            />
             <Text
               numberOfLines={1}
-              style={{ fontSize: 16, fontWeight: "500", textAlign: "center", marginLeft: 4, flexShrink: 1 }}>
+              style={{
+                fontSize: 16,
+                fontWeight: "500",
+                textAlign: "center",
+                marginLeft: 4,
+                flexShrink: 1,
+              }}>
               Dina Grupper
             </Text>
           </TouchableOpacity>
         </View>
-        <View style={[styles.friendsView, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
-          <View style={[styles.searchContainer, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
-            <Text style={{ fontWeight: "500", fontSize: 24 }}>Sök efter användare:</Text>
+        <View
+          style={[
+            styles.friendsView,
+            generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8),
+          ]}>
+          <View
+            style={[
+              styles.searchContainer,
+              generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8),
+            ]}>
+            <Text style={{ fontWeight: "500", fontSize: 24 }}>
+              Sök efter användare:
+            </Text>
             <View style={{ flexDirection: "row", marginTop: 2 }}>
               <View style={styles.inputIconCombo}>
                 <TextInput
@@ -439,17 +685,29 @@ const ProfilePage = () => {
                   style={styles.searchInput}
                 />
                 {searchText.length > 0 ? (
-                  <TouchableOpacity style={styles.crossStyle} onPress={() => setSearchText("")}>
-                    <Entypo name="cross" size={34} color="black" />
+                  <TouchableOpacity
+                    style={styles.crossStyle}
+                    onPress={() => setSearchText("")}>
+                    <Entypo
+                      name="cross"
+                      size={34}
+                      color="black"
+                    />
                   </TouchableOpacity>
                 ) : null}
               </View>
               <TouchableOpacity
                 style={styles.searchGlass}
                 onPress={() => {
-                  searchText.length > 0 ? search(searchText) : null;
+                  searchText.length > 0
+                    ? search(searchText)
+                    : null;
                 }}>
-                <FontAwesome name="search" size={30} color={navy} />
+                <FontAwesome
+                  name="search"
+                  size={30}
+                  color={navy}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -459,7 +717,13 @@ const ProfilePage = () => {
     );
   } else {
     return (
-      <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <View
+        style={{
+          width: "100%",
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+        }}>
         <ActivityIndicator size="large" />
       </View>
     );

@@ -1,10 +1,35 @@
-import { FlatList, StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, Modal } from "react-native";
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+  ActivityIndicator,
+  TouchableOpacity,
+  Modal,
+} from "react-native";
 import React, { useState, useEffect } from "react";
-import { lime, lemon, teal, mint, navy } from "../../styles/colors";
-import { doc, getDoc, query, getDocs, collection, where, getAll, setDoc, updateDoc } from "firebase/firestore";
+import {
+  lime,
+  lemon,
+  teal,
+  mint,
+  navy,
+} from "../../styles/colors";
+import {
+  doc,
+  getDoc,
+  query,
+  getDocs,
+  collection,
+  where,
+  getAll,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { auth, db } from "../../firebase";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import { useNavigation } from "@react-navigation/native";
+import getUserData from "../../functions/getUserData";
 
 const ChangeGroup = () => {
   const [loaded, setLoaded] = useState(false);
@@ -16,12 +41,34 @@ const ChangeGroup = () => {
   async function updateGroups(val) {
     setPreventPress(true);
     let groupsCur = groups;
-    groupsCur.unshift(groupsCur.splice(groupsCur.indexOf(val), 1)[0]);
+    groupsCur.unshift(
+      groupsCur.splice(groupsCur.indexOf(val), 1)[0]
+    );
     let groupsCurId = [];
     groupsCur.forEach((group) => {
       groupsCurId.push(group.id);
     });
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { groups: groupsCurId }).then(() => navigation.goBack());
+
+    const requestOptions = {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "VSH-auth-token":
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MmYwMjJjYWExYzI2YWI0ODY2MGY2MzEiLCJpYXQiOjE2NTk5MDQ3MTh9.oYgA4ljVojBQ4O2TV5hFX6guKLEpWfzUTeneOvhS-B0",
+      },
+      body: JSON.stringify({
+        groups: groupsCurId,
+      }),
+    };
+    try {
+      const result = await fetch(
+        "http://192.168.68.138:3000/api/users/me",
+        requestOptions
+      );
+    } catch (error) {
+      console.log("error", error);
+    }
+    navigation.goBack();
   }
 
   useEffect(() => {
@@ -35,7 +82,10 @@ const ChangeGroup = () => {
       const snap = await getDoc(doc(db, "groups", group));
       usersGroups.push({ ...snap.data(), id: snap.id });
       if (usersGroups.length == groupsData.length) {
-        usersGroups.splice(privatIndex, 0, { name: "Privat", id: "Privat" });
+        usersGroups.splice(privatIndex, 0, {
+          name: "Privat",
+          id: "Privat",
+        });
 
         setGroups(usersGroups);
         setLoaded(true);
@@ -44,9 +94,7 @@ const ChangeGroup = () => {
     }
 
     async function getDATA() {
-      const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
-      const userData = userSnap.data();
-
+      userData = await getUserData();
       groupsData = userData.groups;
 
       if (groupsData.includes("Privat")) {
@@ -59,18 +107,13 @@ const ChangeGroup = () => {
           getGroup(group);
         });
       } else {
-        usersGroups.splice(privatIndex, 0, { name: "Privat", id: "Privat" });
+        usersGroups.splice(privatIndex, 0, {
+          name: "Privat",
+          id: "Privat",
+        });
         setGroups(usersGroups);
         setLoaded(true);
       }
-
-      /* const q = query(collection(db, "groups"), where("users", "array-contains-any", [auth.currentUser.uid]));
-      const querySnapshot = await getDocs(q);
-      let groupsArray = [];
-      querySnapshot.forEach((doc) => {
-        groupsArray.push({ id: doc.id, name: doc.data().name });
-      });
-      setGroups(groupsArray) */
     }
 
     if (!loaded) {
@@ -103,7 +146,10 @@ const ChangeGroup = () => {
     return (
       <TouchableOpacity
         onPress={() => updateGroups(item)}
-        style={[local.card, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}
+        style={[
+          local.card,
+          generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8),
+        ]}
         disabled={preventPress}>
         <Text style={local.name}>{item.name}</Text>
       </TouchableOpacity>
@@ -114,7 +160,11 @@ const ChangeGroup = () => {
     return (
       <View style={styles.container}>
         <FlatList
-          contentContainerStyle={{ paddingBottom: 12, paddingTop: 2, paddingHorizontal: 12 }}
+          contentContainerStyle={{
+            paddingBottom: 12,
+            paddingTop: 2,
+            paddingHorizontal: 12,
+          }}
           style={styles.flatList}
           data={groups}
           renderItem={renderCard}
@@ -124,7 +174,14 @@ const ChangeGroup = () => {
     );
   } else {
     return (
-      <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: lime }}>
+      <View
+        style={{
+          width: "100%",
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: lime,
+        }}>
         <ActivityIndicator size="large" />
       </View>
     );

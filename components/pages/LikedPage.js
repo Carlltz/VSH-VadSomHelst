@@ -10,12 +10,34 @@ import {
   ActivityIndicator,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { lime, lemon, teal, mint, navy } from "../../styles/colors";
-import { MaterialCommunityIcons, FontAwesome, FontAwesome5, Ionicons } from "@expo/vector-icons";
+import {
+  lime,
+  lemon,
+  teal,
+  mint,
+  navy,
+} from "../../styles/colors";
+import {
+  MaterialCommunityIcons,
+  FontAwesome,
+  FontAwesome5,
+  Ionicons,
+} from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
-import { collection, doc, getDoc, addDoc, getDocs, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  addDoc,
+  getDocs,
+  setDoc,
+} from "firebase/firestore";
 import { auth, db } from "../../firebase";
-import { useNavigation, useIsFocused } from "@react-navigation/native";
+import {
+  useNavigation,
+  useIsFocused,
+} from "@react-navigation/native";
+import getUserData from "../../functions/getUserData";
 
 const LikedPage = () => {
   const [recipesLoaded, setRecipesLoaded] = useState(false);
@@ -48,20 +70,23 @@ const LikedPage = () => {
       let isMounted = true;
 
       async function getDATA() {
-        const recipesSnap = await getDocs(collection(db, "recipes"));
+        const recipesSnap = await getDocs(
+          collection(db, "recipes")
+        );
         recipesSnap.forEach((doc) => {
           const data = doc.data();
           data.id = doc.id;
           recipes.push(data);
         });
 
-        const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
-        const userData = userSnap.data();
+        const userData = await getUserData("groups&liked");
 
         let likedRecipes;
 
         if (userData.groups[0] != "Privat") {
-          const groupSnap = await getDoc(doc(db, "groups", userData.groups[0]));
+          const groupSnap = await getDoc(
+            doc(db, "groups", userData.groups[0])
+          );
           const groupData = groupSnap.data();
           setCurrentGroupName(groupData.name);
           setCurrentGroupId(groupSnap.id);
@@ -108,8 +133,14 @@ const LikedPage = () => {
     return (
       <TouchableOpacity
         onPress={() => Linking.openURL(item.url)}
-        style={[styles.card, generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8)]}>
-        <Image style={[styles.cardImage]} source={{ uri: item.image }} />
+        style={[
+          styles.card,
+          generateBoxShadowStyle("#000", 0, 4, 0.3, 4.56, 8),
+        ]}>
+        <Image
+          style={[styles.cardImage]}
+          source={{ uri: item.image }}
+        />
         {/* Could use the same method as in profile page for the profile pic render */}
         <View
           style={{
@@ -119,13 +150,36 @@ const LikedPage = () => {
             justifyContent: "center",
             marginHorizontal: 5,
           }}>
-          <Text style={{ fontSize: 18, textAlign: "center" }}>{item.name}</Text>
-          <View style={{ flexDirection: "row", marginBottom: 2 }}>
-            <FontAwesome name={getStar(item.stars[0])} size={24} color="black" />
-            <FontAwesome name={getStar(item.stars[1])} size={24} color="black" />
-            <FontAwesome name={getStar(item.stars[2])} size={24} color="black" />
-            <FontAwesome name={getStar(item.stars[3])} size={24} color="black" />
-            <FontAwesome name={getStar(item.stars[4])} size={24} color="black" />
+          <Text style={{ fontSize: 18, textAlign: "center" }}>
+            {item.name}
+          </Text>
+          <View
+            style={{ flexDirection: "row", marginBottom: 2 }}>
+            <FontAwesome
+              name={getStar(item.stars[0])}
+              size={24}
+              color="black"
+            />
+            <FontAwesome
+              name={getStar(item.stars[1])}
+              size={24}
+              color="black"
+            />
+            <FontAwesome
+              name={getStar(item.stars[2])}
+              size={24}
+              color="black"
+            />
+            <FontAwesome
+              name={getStar(item.stars[3])}
+              size={24}
+              color="black"
+            />
+            <FontAwesome
+              name={getStar(item.stars[4])}
+              size={24}
+              color="black"
+            />
           </View>
           <View
             style={{
@@ -135,13 +189,26 @@ const LikedPage = () => {
               justifyContent: "space-evenly",
             }}>
             <View style={{ alignItems: "center" }}>
-              <MaterialCommunityIcons name="clock-time-five-outline" size={20} color={navy} />
-              <Text style={{ fontSize: 16, fontWeight: "500" }}>{item.time}</Text>
+              <MaterialCommunityIcons
+                name="clock-time-five-outline"
+                size={20}
+                color={navy}
+              />
+              <Text style={{ fontSize: 16, fontWeight: "500" }}>
+                {item.time}
+              </Text>
             </View>
             <View style={{ alignItems: "center" }}>
-              <MaterialCommunityIcons name="food-takeout-box-outline" size={20} color={navy} />
+              <MaterialCommunityIcons
+                name="food-takeout-box-outline"
+                size={20}
+                color={navy}
+              />
               <Text style={{ fontSize: 16, fontWeight: "500" }}>
-                {item.ingredientAmount} {item.ingredientAmount == 1 ? "Ingrediens" : "Ingredienser"}
+                {item.ingredientAmount}{" "}
+                {item.ingredientAmount == 1
+                  ? "Ingrediens"
+                  : "Ingredienser"}
               </Text>
             </View>
           </View>
@@ -155,7 +222,10 @@ const LikedPage = () => {
       return (
         <View style={styles.container}>
           <FlatList
-            contentContainerStyle={{ paddingBottom: 0, paddingTop: 0 }}
+            contentContainerStyle={{
+              paddingBottom: 0,
+              paddingTop: 0,
+            }}
             style={styles.flatList}
             data={likedData}
             renderItem={renderCard}
@@ -168,7 +238,12 @@ const LikedPage = () => {
     } else if (recipesLoaded) {
       return (
         <View style={styles.container}>
-          <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center" }}>
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "600",
+              textAlign: "center",
+            }}>
             Gruppen {currentGroupName} har inga gillade recept!
           </Text>
         </View>
@@ -179,24 +254,65 @@ const LikedPage = () => {
   if (recipesLoaded) {
     return (
       <View style={styles.container}>
-        <View style={{ flexDirection: "row", width: "100%", justifyContent: "space-evenly" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            width: "100%",
+            justifyContent: "space-evenly",
+          }}>
           <TouchableOpacity
-            style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+            style={[
+              styles.groupContainer,
+              generateBoxShadowStyle(
+                "#000",
+                0,
+                2,
+                0.23,
+                2.62,
+                4
+              ),
+            ]}
             onPress={() => navigation.push("ChangeGroup")}>
-            <MaterialCommunityIcons name="account-group" size={30} color="black" />
+            <MaterialCommunityIcons
+              name="account-group"
+              size={30}
+              color="black"
+            />
             <Text
               numberOfLines={1}
-              style={{ fontSize: 17, fontWeight: "500", textAlign: "center", marginHorizontal: 4, flexShrink: 1 }}>
+              style={{
+                fontSize: 17,
+                fontWeight: "500",
+                textAlign: "center",
+                marginHorizontal: 4,
+                flexShrink: 1,
+              }}>
               {currentGroupName}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.groupContainer, generateBoxShadowStyle("#000", 0, 2, 0.23, 2.62, 4)]}
+            style={[
+              styles.groupContainer,
+              generateBoxShadowStyle(
+                "#000",
+                0,
+                2,
+                0.23,
+                2.62,
+                4
+              ),
+            ]}
             onPress={() => {}}>
             <Ionicons name="filter" size={28} color="black" />
             <Text
               numberOfLines={1}
-              style={{ fontSize: 17, fontWeight: "500", textAlign: "center", marginHorizontal: 4, flexShrink: 1 }}>
+              style={{
+                fontSize: 17,
+                fontWeight: "500",
+                textAlign: "center",
+                marginHorizontal: 4,
+                flexShrink: 1,
+              }}>
               Filter
             </Text>
           </TouchableOpacity>
@@ -206,7 +322,13 @@ const LikedPage = () => {
     );
   } else {
     return (
-      <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <View
+        style={{
+          width: "100%",
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+        }}>
         <ActivityIndicator size="large" />
       </View>
     );

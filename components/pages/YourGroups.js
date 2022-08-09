@@ -10,8 +10,20 @@ import {
   Dimensions,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { lime, lemon, teal, mint, navy } from "../../styles/colors";
-import { MaterialCommunityIcons, FontAwesome, Ionicons, Entypo, AntDesign } from "@expo/vector-icons";
+import {
+  lime,
+  lemon,
+  teal,
+  mint,
+  navy,
+} from "../../styles/colors";
+import {
+  MaterialCommunityIcons,
+  FontAwesome,
+  Ionicons,
+  Entypo,
+  AntDesign,
+} from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import {
   collection,
@@ -28,6 +40,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../../firebase";
 import RenderYourGroups from "../RenderYourGroups";
+import getUserData from "../../functions/getUserData";
 
 const YourGroups = () => {
   const [groups, setGroups] = useState([]);
@@ -39,20 +52,45 @@ const YourGroups = () => {
     let isMounted = true;
 
     async function getDATA() {
-      const q = query(collection(db, "groups"), where("users", "array-contains", auth.currentUser.uid));
+      const q = query(
+        collection(db, "groups"),
+        where(
+          `usernames.${auth.currentUser.uid}.memberId`,
+          "==",
+          auth.currentUser.uid
+        )
+      );
       const groups = await getDocs(q);
-      let yourGroups = [{ name: "Privat", id: "Privat", numMem: 1, members: [auth.currentUser.displayName] }];
+      const userData = await getUserData("groups");
+      let yourGroups = [
+        {
+          name: "Privat",
+          id: "Privat",
+          numMem: 1,
+          members: {
+            [auth.currentUser.uid]: {
+              memberId: auth.currentUser.uid,
+              memberName: auth.currentUser.displayName,
+              isMember: true,
+            },
+          },
+        },
+      ];
 
       groups.forEach((group) => {
-        groupData = group.data();
-        yourGroups.push({
-          name: groupData.name,
-          id: group.id,
-          numMem: groupData.users.length,
-          members: groupData.usersNames,
-        });
+        console.log(group.id);
+        if (userData.groups.includes(group.id)) {
+          let groupData = group.data();
+          yourGroups.push({
+            name: groupData.name,
+            id: group.id,
+            numMem: Object.keys(groupData.usernames).length,
+            members: groupData.usernames,
+          });
+        }
       });
       setGroups(yourGroups);
+      console.log(yourGroups);
 
       setLoaded(true);
     }
@@ -73,7 +111,6 @@ const YourGroups = () => {
       return prev;
     });
     setReloadFlatList((val) => !val);
-    await updateDoc(doc(db, "groups", group.id), { users: arrayRemove(group.id) });
   }
 
   const ListOrText = () => {
@@ -81,10 +118,15 @@ const YourGroups = () => {
       return (
         <View style={styles.container}>
           <FlatList
-            contentContainerStyle={{ paddingBottom: 10, paddingTop: 0 }}
+            contentContainerStyle={{ paddingBottom: 25 }}
             style={{ alignSelf: "stretch", flex: 1 }}
             data={groups}
-            renderItem={(item) => <RenderYourGroups item={item.item} />}
+            renderItem={(item) => (
+              <RenderYourGroups
+                item={item.item}
+                removeGroup={leaveGroup}
+              />
+            )}
             extraData={reloadFlatList}
             /* keyExtractor={(item) => item.id} */
           />
@@ -92,8 +134,19 @@ const YourGroups = () => {
       );
     } else {
       return (
-        <View style={[styles.container, { justifyContent: "center" }]}>
-          <Text style={{ fontSize: 20, fontWeight: "600", textAlign: "center" }}>Du är inte med i några grupper!</Text>
+        <View
+          style={[
+            styles.container,
+            { justifyContent: "center" },
+          ]}>
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "600",
+              textAlign: "center",
+            }}>
+            Du är inte med i några grupper!
+          </Text>
         </View>
       );
     }
@@ -107,7 +160,14 @@ const YourGroups = () => {
     );
   } else {
     return (
-      <View style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: lime }}>
+      <View
+        style={{
+          width: "100%",
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: lime,
+        }}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -122,8 +182,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "flex-start",
-    padding: 10,
-    paddingTop: 0,
+    paddingHorizontal: 10,
     backgroundColor: lime,
   },
 });

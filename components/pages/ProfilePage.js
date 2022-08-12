@@ -42,6 +42,11 @@ import {
   getUserdata,
   putUserdata,
 } from "../../functions/fetchUsers";
+import {
+  getSearchResult,
+  getAllUserData,
+} from "../../functions/fetchUsername";
+import { createGroup } from "../../functions/fetchGroups";
 
 const ProfilePage = () => {
   const navigation = useNavigation();
@@ -56,6 +61,7 @@ const ProfilePage = () => {
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [uploadRecipes, setuploadRecipes] = useState(false);
   const [createGroupName, setCreateGroupName] = useState("");
+  const [currentUser, setCurrentUser] = useState("");
   const [groupMembers, setGroupMembers] = useState([]);
   const [reloadFlatList, setReloadFlatList] = useState(false);
 
@@ -72,8 +78,12 @@ const ProfilePage = () => {
 
     async function getDATA() {
       const userData = await getUserdata(
-        "liked&disliked&friends"
+        "liked&disliked&friends&username"
       );
+      setCurrentUser({
+        username: userData.username,
+        _id: userData._id,
+      });
 
       setAmountSwiped(
         userData.liked.length + userData.disliked.length
@@ -81,7 +91,9 @@ const ProfilePage = () => {
       setAmountLiked(userData.liked.length);
       setAmountDisliked(userData.disliked.length);
 
-      setFriends(userData.friends);
+      // Retrieveing all friends data
+      const friends = await getAllUserData(userData.friends);
+      setFriends(friends);
 
       setLoaded(true);
     }
@@ -98,23 +110,19 @@ const ProfilePage = () => {
 
   const search = async (key) => {
     setSearched(true);
+    if (key.includes("#")) {
+      key = key.split("#");
+    }
 
-    const usernames = await getDoc(
-      doc(db, "usernamesTaken", "taken")
-    );
-    const matches = usernames
-      .data()
-      .usernamesTaken.filter((username) =>
-        username.includes(key)
-      );
-    if (matches.includes(auth.currentUser.displayName))
-      matches.splice(
-        matches.indexOf(auth.currentUser.displayName),
-        1
-      );
-    /* if (matches.includes(auth.currentUser.displayName))
-      matches.splice(matches.indexOf(auth.currentUser.displayName), 1); */
-    setSearchResult(matches);
+    let result;
+    if (Array.isArray(key)) {
+      result = await getSearchResult(key[0], key[1]);
+    } else {
+      result = await getSearchResult(key);
+    }
+
+    // Remove self from search
+    setSearchResult(result);
     setSearchFinished(true);
   };
 
@@ -137,9 +145,9 @@ const ProfilePage = () => {
             }}
             style={{ width: "100%", flex: 1 }}
             data={friends}
-            renderItem={(item) => (
+            renderItem={({ item }) => (
               <Person
-                name={item.item}
+                data={item}
                 friend={true}
                 addFriend={(val) =>
                   setFriends((prev) => {
@@ -187,12 +195,10 @@ const ProfilePage = () => {
               }}
               style={{ width: "100%", flex: 1 }}
               data={searchResult}
-              renderItem={(item) => (
+              renderItem={({ item }) => (
                 <Person
-                  name={item.item}
-                  friend={
-                    friends.includes(item.item) ? true : false
-                  }
+                  data={item}
+                  friend={friends.includes(item) ? true : false}
                   addFriend={(val) =>
                     setFriends((prev) => {
                       prev.push(val);
@@ -299,8 +305,7 @@ const ProfilePage = () => {
     },
   });
 
-  const groupPerson = (item) => {
-    item = item.item;
+  const groupPerson = ({ item }) => {
     return (
       <TouchableOpacity
         style={[
@@ -317,7 +322,7 @@ const ProfilePage = () => {
         <Text
           numberOfLines={1}
           style={{ fontSize: 16, flexShrink: 1 }}>
-          {item}
+          {item.username}
         </Text>
         <Entypo
           name="minus"
@@ -330,26 +335,41 @@ const ProfilePage = () => {
   };
 
   let memberIds = [];
-  async function getMemeberIds(memberName) {
-    const q = query(
-      collection(db, "usernames"),
-      where("usrname", "in", [memberName])
-    );
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((val) => {
-      memberIds.push(val.id);
-    });
-    if (memberIds.length === groupMembers.length) {
-      let finishedMembers = [];
 
-      // This adds all members to the group
-      /* memberIds.forEach((member) => {
-        finishedMembers.push({ [member]: { disliked: [], liked: [] } });
+  async function confirmedCreatingGroup() {
+    if (createGroupName === "")
+      alert("Vänligen ange ett gruppnamn först");
+    else {
+      let members = {}; // Is a field in the group
+      groupMembers.forEach((member) => {
+        members = {
+          ...members,
+          ...{
+            [member.id]: {
+              isMember:
+                member.username === currentUser.username
+                  ? true
+                  : false,
+              _id: member.id,
+            },
+          },
+        };
       });
-      let finishedObject = {};
-      finishedMembers.forEach((member) => {
-        finishedObject = { ...finishedObject, ...member };
-      }); */
+      await createGroup({
+        name: createGroupName,
+        members,
+        membersData: {
+          [currentUser._id]: {
+            _id: currentUser._id,
+          },
+        },
+      });
+      // This have to add group to the user to!
+      setCreatingGroup(false);
+      setGroupMembers([]);
+      setCreateGroupName("");
+
+      /* let finishedMembers = [];
       let i;
       memberIds.unshift(auth.currentUser.uid);
       memberIds.forEach((memberId) => {
@@ -396,17 +416,7 @@ const ProfilePage = () => {
           setGroupMembers([]);
           setCreateGroupName("");
         }
-      }
-    }
-  }
-
-  async function createGroup() {
-    if (createGroupName === "")
-      alert("Vänligen ange ett gruppnamn först");
-    else {
-      groupMembers.forEach((name) => {
-        getMemeberIds(name);
-      });
+      } */
     }
   }
 
@@ -485,7 +495,7 @@ const ProfilePage = () => {
                   8
                 ),
               ]}
-              onPress={() => createGroup()}>
+              onPress={() => confirmedCreatingGroup()}>
               <Text
                 style={{
                   fontWeight: "500",
@@ -577,7 +587,7 @@ const ProfilePage = () => {
           />
           <View>
             <Text style={{ fontWeight: "500", fontSize: 24 }}>
-              {auth.currentUser.displayName}
+              {currentUser.username}
             </Text>
             <Text style={{ fontWeight: "400", fontSize: 16 }}>
               Swipes: {amountSwiped}

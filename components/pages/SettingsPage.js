@@ -10,7 +10,6 @@ import {
   Easing,
 } from "react-native";
 import React, { useEffect, useState, useRef } from "react";
-import { signOut } from "firebase/auth";
 import {
   lime,
   lemon,
@@ -20,8 +19,6 @@ import {
 } from "../../styles/colors";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import { useNavigation } from "@react-navigation/native";
-import { auth, db } from "../../firebase";
-import { doc, setDoc } from "firebase/firestore";
 import * as SecureStore from "expo-secure-store";
 import { deleteFieldsInUserdata } from "../../functions/fetchUsers";
 

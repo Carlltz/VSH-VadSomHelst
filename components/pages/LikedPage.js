@@ -25,19 +25,11 @@ import {
 } from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import {
-  collection,
-  doc,
-  getDoc,
-  addDoc,
-  getDocs,
-  setDoc,
-} from "firebase/firestore";
-import { auth, db } from "../../firebase";
-import {
   useNavigation,
   useIsFocused,
 } from "@react-navigation/native";
 import { getUserdata } from "../../functions/fetchUsers";
+import { getRecipes } from "../../functions/fetchRecipes";
 
 const LikedPage = () => {
   const [recipesLoaded, setRecipesLoaded] = useState(false);
@@ -54,9 +46,9 @@ const LikedPage = () => {
     switch (val) {
       case 0:
         return "star-o";
-      case 1:
+      case 2:
         return "star";
-      case 0.5:
+      case 1:
         return "star-half-empty";
     }
   }
@@ -70,38 +62,31 @@ const LikedPage = () => {
       let isMounted = true;
 
       async function getDATA() {
-        const recipesSnap = await getDocs(
-          collection(db, "recipes")
-        );
-        recipesSnap.forEach((doc) => {
-          const data = doc.data();
-          data.id = doc.id;
-          recipes.push(data);
-        });
+        const recipes = await getRecipes();
 
         const userData = await getUserdata("groups&liked");
 
         let likedRecipes;
 
         if (userData.groups[0] != "Privat") {
-          const groupSnap = await getDoc(
-            doc(db, "groups", userData.groups[0])
+          const groupData = await getGroupsByIds(
+            "name&membersData",
+            { groupIds: userData.groups[0] }
           );
-          const groupData = groupSnap.data();
           setCurrentGroupName(groupData.name);
-          setCurrentGroupId(groupSnap.id);
+          setCurrentGroupId(groupSnap._id);
 
-          likedRecipes = groupData[auth.currentUser.uid].liked;
+          likedRecipes = groupData[userData._id].liked;
         } else {
           setCurrentGroupName(userData.groups[0]);
-          setCurrentGroupId(auth.currentUser.uid);
+          setCurrentGroupId(userData._id);
 
           likedRecipes = userData.liked;
         }
 
         let like = [];
         recipes.forEach((rec) => {
-          if (likedRecipes.includes(rec.id)) {
+          if (likedRecipes.includes(rec._id)) {
             like.push(rec);
           }
         });
@@ -229,7 +214,7 @@ const LikedPage = () => {
             style={styles.flatList}
             data={likedData}
             renderItem={renderCard}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item._id}
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
           />

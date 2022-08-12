@@ -24,19 +24,12 @@ import {
 } from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import {
-  collection,
-  doc,
-  getDoc,
-  addDoc,
-  getDocs,
-  setDoc,
-} from "firebase/firestore";
-import { auth, db } from "../../firebase";
-import {
   useNavigation,
   useIsFocused,
 } from "@react-navigation/native";
 import { getUserdata } from "../../functions/fetchUsers";
+import { getRecipes } from "../../functions/fetchRecipes";
+import { getGroupsByIds } from "../../functions/fetchGroups";
 
 const DislikedPage = () => {
   const [recipesLoaded, setRecipesLoaded] = useState(false);
@@ -53,9 +46,9 @@ const DislikedPage = () => {
     switch (val) {
       case 0:
         return "star-o";
-      case 1:
+      case 2:
         return "star";
-      case 0.5:
+      case 1:
         return "star-half-empty";
     }
   }
@@ -69,40 +62,31 @@ const DislikedPage = () => {
       let isMounted = true;
 
       async function getDATA() {
-        const recipesSnap = await getDocs(
-          collection(db, "recipes")
-        );
-        recipesSnap.forEach((doc) => {
-          const data = doc.data();
-          data.id = doc.id;
-          recipes.push(data);
-        });
-        //setRecipesSnaps(recipes);
+        const recipes = await getRecipes();
 
-        userData = await getUserdata("groups&disliked");
+        const userData = await getUserdata("groups&disliked");
 
         let dislikedRecipes;
 
         if (userData.groups[0] != "Privat") {
-          const groupSnap = await getDoc(
-            doc(db, "groups", userData.groups[0])
+          const groupData = await getGroupsByIds(
+            "name&membersData",
+            { groupIds: userData.groups[0] }
           );
-          const groupData = groupSnap.data();
           setCurrentGroupName(groupData.name);
-          setCurrentGroupId(groupSnap.id);
+          setCurrentGroupId(groupSnap._id);
 
-          dislikedRecipes =
-            groupData[auth.currentUser.uid].disliked;
+          dislikedRecipes = groupData[userData._id].disliked;
         } else {
           setCurrentGroupName(userData.groups[0]);
-          setCurrentGroupId(auth.currentUser.uid);
+          setCurrentGroupId(userData._id);
 
           dislikedRecipes = userData.disliked;
         }
 
         let dislike = [];
         recipes.forEach((rec) => {
-          if (dislikedRecipes.includes(rec.id)) {
+          if (dislikedRecipes.includes(rec._id)) {
             dislike.push(rec);
           }
         });
@@ -229,7 +213,7 @@ const DislikedPage = () => {
             style={styles.flatList}
             data={dislikedData}
             renderItem={renderCard}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item._id}
           />
         </View>
       );

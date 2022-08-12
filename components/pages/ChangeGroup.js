@@ -15,21 +15,10 @@ import {
   mint,
   navy,
 } from "../../styles/colors";
-import {
-  doc,
-  getDoc,
-  query,
-  getDocs,
-  collection,
-  where,
-  getAll,
-  setDoc,
-  updateDoc,
-} from "firebase/firestore";
-import { auth, db } from "../../firebase";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
 import { useNavigation } from "@react-navigation/native";
 import { getUserdata } from "../../functions/fetchUsers";
+import { getGroupsByIds } from "../../functions/fetchGroups";
 
 const ChangeGroup = () => {
   const [loaded, setLoaded] = useState(false);
@@ -41,23 +30,30 @@ const ChangeGroup = () => {
   async function updateGroups(val) {
     setPreventPress(true);
     let groupsCur = groups;
+
     groupsCur.unshift(
       groupsCur.splice(groupsCur.indexOf(val), 1)[0]
     );
+
     let groupsCurId = [];
     groupsCur.forEach((group) => {
-      groupsCurId.push(group.id);
+      groupsCurId.push(group._id);
+    });
+
+    const groupsOnly_Id = [];
+    groupsCur.forEach((group) => {
+      groupsOnly_Id.push(group._id);
     });
 
     const requestOptions = {
-      method: "PUT",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         "VSH-auth-token":
           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MmYwMjJjYWExYzI2YWI0ODY2MGY2MzEiLCJpYXQiOjE2NTk5MDQ3MTh9.oYgA4ljVojBQ4O2TV5hFX6guKLEpWfzUTeneOvhS-B0",
       },
       body: JSON.stringify({
-        groups: groupsCurId,
+        groups: groupsOnly_Id,
       }),
     };
     try {
@@ -78,41 +74,25 @@ const ChangeGroup = () => {
     let groupsData = [];
     let privatIndex = 0;
 
-    async function getGroup(group) {
-      const snap = await getDoc(doc(db, "groups", group));
-      usersGroups.push({ ...snap.data(), id: snap.id });
-      if (usersGroups.length == groupsData.length) {
-        usersGroups.splice(privatIndex, 0, {
-          name: "Privat",
-          id: "Privat",
-        });
-
-        setGroups(usersGroups);
-        setLoaded(true);
-      }
-    }
-
     async function getDATA() {
-      userData = await getUserdata();
+      const userData = await getUserdata("groups");
       groupsData = userData.groups;
 
       if (groupsData.includes("Privat")) {
         privatIndex = groupsData.indexOf("Privat");
         groupsData.splice(privatIndex, 1);
       }
-
       if (groupsData.length > 0) {
-        groupsData.forEach((group) => {
-          getGroup(group);
+        usersGroups = await getGroupsByIds({
+          groupIds: groupsData,
         });
-      } else {
-        usersGroups.splice(privatIndex, 0, {
-          name: "Privat",
-          id: "Privat",
-        });
-        setGroups(usersGroups);
-        setLoaded(true);
       }
+      usersGroups.splice(privatIndex, 0, {
+        name: "Privat",
+        _id: "Privat",
+      });
+      setGroups(usersGroups);
+      setLoaded(true);
     }
 
     if (!loaded) {
@@ -167,7 +147,7 @@ const ChangeGroup = () => {
           style={styles.flatList}
           data={groups}
           renderItem={renderCard}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id}
         />
       </View>
     );

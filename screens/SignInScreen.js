@@ -18,8 +18,9 @@ const SignInScreen = ({ navigation }) => {
   const [repPassword, setRepPassword] = useState("");
   const [register, setRegister] = useState(false);
 
-  async function saveToken(value) {
-    await SecureStore.setItemAsync("token", value);
+  async function saveTokenAndUsername(token, username) {
+    await SecureStore.setItemAsync("token", token);
+    await SecureStore.setItemAsync("username", username);
   }
 
   useEffect(() => {
@@ -47,7 +48,8 @@ const SignInScreen = ({ navigation }) => {
           requestOptions
         );
         if (result.status === 200) {
-          saveToken(await result.text());
+          const data = await result.json();
+          saveTokenAndUsername(data.token, data.username);
           navigation.replace("HomeScreen");
         } else {
           alert(await result.text());
@@ -76,8 +78,11 @@ const SignInScreen = ({ navigation }) => {
           requestOptions
         );
         if (result.status === 200) {
-          console.log(result.headers.get("VSH-auth-token"));
-          saveToken(result.headers.get("VSH-auth-token"));
+          const data = await result.json();
+          saveTokenAndUsername(
+            result.headers.get("VSH-auth-token"),
+            data.username
+          );
           navigation.replace("HomeScreen");
         } else {
           alert(await result.text());
@@ -147,13 +152,13 @@ const SignInScreen = ({ navigation }) => {
             <TouchableOpacity
               onPress={singUp}
               style={styles.button}>
-              <Text style={styles.buttonText}>Register</Text>
+              <Text style={styles.buttonText}>Registrera</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setRegister(false)}
               style={[styles.button, styles.buttonOutline]}>
               <Text style={styles.buttonOutlineText}>
-                Login insted
+                Logga in istället
               </Text>
             </TouchableOpacity>
           </View>

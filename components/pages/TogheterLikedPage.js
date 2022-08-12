@@ -22,16 +22,8 @@ import {
   FontAwesome,
 } from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../../styles/generateShadow";
-import {
-  collection,
-  doc,
-  getDoc,
-  addDoc,
-  getDocs,
-  setDoc,
-} from "firebase/firestore";
-import { auth, db } from "../../firebase";
 import { getUserdata } from "../../functions/fetchUsers";
+import { getRecipes } from "../../functions/fetchRecipes";
 
 const DATA = [
   {
@@ -144,14 +136,7 @@ const TogheterLikedPage = () => {
     let isMounted = true;
 
     async function getDATA() {
-      const recipesSnap = await getDocs(
-        collection(db, "recipes")
-      );
-      recipesSnap.forEach((doc) => {
-        const data = doc.data();
-        data.id = doc.id;
-        recipes.push(data);
-      });
+      const recipes = await getRecipes();
       //setRecipesSnaps(recipes);
 
       const userData = await getUserdata("liked");

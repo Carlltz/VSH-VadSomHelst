@@ -21,13 +21,7 @@ import {
   AntDesign,
 } from "@expo/vector-icons";
 import { generateBoxShadowStyle } from "../styles/generateShadow";
-import { db, auth } from "../firebase";
-import {
-  doc,
-  updateDoc,
-  deleteField,
-  arrayRemove,
-} from "firebase/firestore";
+import { leaveGroupFetch } from "../functions/fetchGroups";
 
 const AnimatedAntDesign =
   Animated.createAnimatedComponent(AntDesign);
@@ -48,31 +42,7 @@ const RenderYourGroups = ({ item, removeGroup }) => {
   }, [moreInfo]);
 
   async function leaveGroup() {
-    const requestOptions = {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        "VSH-auth-token":
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MmYwMjJjYWExYzI2YWI0ODY2MGY2MzEiLCJpYXQiOjE2NTk5MDQ3MTh9.oYgA4ljVojBQ4O2TV5hFX6guKLEpWfzUTeneOvhS-B0",
-      },
-      body: JSON.stringify({
-        groups: item._id,
-      }),
-    };
-    try {
-      const result = await fetch(
-        "http://192.168.68.138:3000/api/users/me",
-        requestOptions
-      );
-    } catch (error) {
-      console.log("error", error);
-    }
-    await updateDoc(doc(db, "groups", item.id), {
-      [`usernames.${auth.currentUser.uid}`]: deleteField(),
-    });
-    await updateDoc(doc(db, "groups", item.id), {
-      [auth.currentUser.uid]: deleteField(),
-    });
+    await leaveGroupFetch(item._id);
     removeGroup(item);
   }
 

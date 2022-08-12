@@ -1,7 +1,13 @@
-import { StyleSheet, Text, View, Button, StatusBar, TouchableOpacity, SafeAreaView } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Button,
+  StatusBar,
+  TouchableOpacity,
+  SafeAreaView,
+} from "react-native";
 import React, { useEffect, useRef, useState } from "react";
-import { auth } from "../firebase";
-import { signOut } from "firebase/auth";
 import { lime, lemon, teal, mint, navy } from "../styles/colors";
 import BotBar from "../components/BotBar";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
@@ -42,7 +48,9 @@ const HomeScreen = ({ navigation }) => {
   const f = () => {
     let reg = /(?:recipeInformation": )(.*?})/gms;
 
-    fetch("https://www.ica.se/recept/kyckling-med-purjolokssas-714632/")
+    fetch(
+      "https://www.ica.se/recept/kyckling-med-purjolokssas-714632/"
+    )
       .then(function (response) {
         switch (response.status) {
           // status "OK"

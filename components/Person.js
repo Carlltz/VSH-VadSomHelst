@@ -14,15 +14,12 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import {
-  doc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
-} from "firebase/firestore";
-import { auth, db } from "../firebase";
+  putUserdata,
+  deleteUserdata,
+} from "../functions/fetchUsers";
 
 const Person = ({
-  name,
+  data,
   friend,
   addFriend,
   removeFriend,
@@ -36,53 +33,21 @@ const Person = ({
   const handleAddFriend = async () => {
     setFriendsIcon("check-circle");
     setFriends(true);
-    addFriend(name);
+    addFriend(data);
 
-    const requestOptions = {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "VSH-auth-token":
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MmYwMjJjYWExYzI2YWI0ODY2MGY2MzEiLCJpYXQiOjE2NTk5MDQ3MTh9.oYgA4ljVojBQ4O2TV5hFX6guKLEpWfzUTeneOvhS-B0",
-      },
-      body: JSON.stringify({
-        friends: name,
-      }),
-    };
-    try {
-      const result = await fetch(
-        "http://192.168.68.138:3000/api/users/me",
-        requestOptions
-      );
-    } catch (error) {
-      console.log("error", error);
-    }
+    await putUserdata({
+      friends: data.id,
+    });
   };
 
   const handleRemoveFriend = async () => {
     setFriendsIcon("add-circle-outline");
     setFriends(false);
-    removeFriend(name);
+    removeFriend(data);
 
-    const requestOptions = {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        "VSH-auth-token":
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MmYwMjJjYWExYzI2YWI0ODY2MGY2MzEiLCJpYXQiOjE2NTk5MDQ3MTh9.oYgA4ljVojBQ4O2TV5hFX6guKLEpWfzUTeneOvhS-B0",
-      },
-      body: JSON.stringify({
-        friends: name,
-      }),
-    };
-    try {
-      const result = await fetch(
-        "http://192.168.68.138:3000/api/users/me",
-        requestOptions
-      );
-    } catch (error) {
-      console.log("error", error);
-    }
+    await deleteUserdata({
+      friends: data.id,
+    });
   };
 
   return (
@@ -112,13 +77,13 @@ const Person = ({
           paddingHorizontal: 4,
           paddingVertical: 15,
         }}>
-        {name}
+        {data.username}
       </Text>
       <View style={{ marginLeft: "auto" }}>
         <TouchableOpacity
           style={local.addBtn}
           onPress={() => {
-            addToGroup(name);
+            addToGroup(data);
           }}>
           <MaterialIcons
             name={"group-add"}

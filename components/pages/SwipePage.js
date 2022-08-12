@@ -227,7 +227,6 @@ const SwipePage = ({ setParentPage }) => {
           setCurrentGroupId("Privat");
           swiped = [...userData.liked, ...userData.disliked];
         }
-        console.log("swiped: ", swiped);
         const recipesSnap = await getRecipes();
         for (let i = 0; i < recipesSnap.length; i++) {
           if (!swiped.includes(recipesSnap[i]._id)) {

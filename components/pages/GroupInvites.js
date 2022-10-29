@@ -42,6 +42,7 @@ import {
   getUserdata,
   putUserdata,
 } from "../../functions/fetchUsers";
+import { initMemberData } from "../../functions/fetchGroups";
 
 const GroupInvites = () => {
   const [groups, setGroups] = useState([]);
@@ -96,15 +97,12 @@ const GroupInvites = () => {
       return prev;
     });
     setReloadFlatList((val) => !val);
-    await setDoc(
-      doc(db, "groups", group.id),
-      { [auth.currentUser.uid]: { disliked: [], liked: [] } },
-      { merge: true }
-    );
-    await updateDoc(doc(db, "groups", group.id), {
-      [`usernames.${auth.currentUser.uid}.isMember`]: true,
+
+    // This should be a transaction!
+    await initMemberData({
+      _id: group._id,
     });
-    await putUserdata({ groups: arrayUnion(group.id) });
+    await putUserdata({ groups: group._id });
   }
 
   async function declineGroup(group) {

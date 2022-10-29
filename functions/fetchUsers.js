@@ -2,7 +2,7 @@ import getToken from "../functions/getToken";
 
 async function getUserdata(options = "") {
   const url =
-    "http://192.168.68.138:3000/api/users/me/" + options;
+    "http://81.229.44.166:3000/api/users/me/" + options;
   try {
     let userData = await fetch(url, {
       headers: {
@@ -27,7 +27,7 @@ async function putUserdata(body) {
   };
   try {
     const result = await fetch(
-      "http://192.168.68.138:3000/api/users/me",
+      "http://81.229.44.166:3000/api/users/me",
       requestOptions
     );
   } catch (error) {
@@ -46,7 +46,7 @@ async function deleteUserdata(body) {
   };
   try {
     const result = await fetch(
-      "http://192.168.68.138:3000/api/users/me",
+      "http://81.229.44.166:3000/api/users/me",
       requestOptions
     );
   } catch (error) {
@@ -64,7 +64,7 @@ async function deleteFieldsInUserdata(body) {
   };
   try {
     const result = await fetch(
-      "http://192.168.68.138:3000/api/users/me/all/" + body,
+      "http://81.229.44.166:3000/api/users/me/all/" + body,
       requestOptions
     );
   } catch (error) {
@@ -81,7 +81,7 @@ async function getSelectedGroup() {
   };
   try {
     let result = await fetch(
-      "http://192.168.68.138:3000/api/users/firstGroup",
+      "http://81.229.44.166:3000/api/users/firstGroup",
       requestOptions
     );
     result = await result.json();

@@ -11,7 +11,7 @@ async function getSearchResult(username, uid = "") {
   };
   try {
     let data = await fetch(
-      "http://192.168.68.138:3000/api/usernames/search",
+      "http://81.229.44.166:3000/api/usernames/search",
       requestOptions
     );
     data = await data.json();
@@ -32,7 +32,7 @@ async function getAllUserData(body) {
   };
   try {
     let data = await fetch(
-      "http://192.168.68.138:3000/api/usernames/data",
+      "http://81.229.44.166:3000/api/usernames/data",
       requestOptions
     );
     data = await data.json();

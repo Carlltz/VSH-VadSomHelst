@@ -56,7 +56,7 @@ const Card = ({ item }) => {
       };
       try {
         const result = await fetch(
-          "http://192.168.68.138:3000/api/users/me",
+          "http://81.229.44.166:3000/api/users/me",
           requestOptions
         );
       } catch (error) {
@@ -77,7 +77,7 @@ const Card = ({ item }) => {
       };
       try {
         const result = await fetch(
-          "http://192.168.68.138:3000/api/users/me",
+          "http://81.229.44.166:3000/api/users/me",
           requestOptions
         );
       } catch (error) {

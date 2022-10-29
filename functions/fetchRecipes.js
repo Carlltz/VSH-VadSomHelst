@@ -1,7 +1,7 @@
 import getToken from "../functions/getToken";
 
 async function getRecipes() {
-  const url = "http://192.168.68.138:3000/api/recipes";
+  const url = "http://81.229.44.166:3000/api/recipes";
   try {
     let data = await fetch(url, {
       headers: {
